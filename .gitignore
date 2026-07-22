@@ -6,3 +6,6 @@ dist/
 .DS_Store
 attached_assets/
 uploaded_attachments/
+data.db
+data.db-shm
+data.db-wal
