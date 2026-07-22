@@ -4,7 +4,7 @@ dist/
 .env.local
 *.log
 .DS_Store
-attached_assets/
+# attached_assets/ (build-time assets are tracked below)
 uploaded_attachments/
 data.db
 data.db-shm
