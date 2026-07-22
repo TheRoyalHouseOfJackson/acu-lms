@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: acu-lms
+    runtime: node
+    plan: starter
+    region: oregon
+    branch: main
+    buildCommand: npm ci && npm run build
+    startCommand: node scripts/render-boot.cjs
+    healthCheckPath: /api/programs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DB_PATH
+        value: /var/data/data-v2.db
+      - key: SEED_DB_PATH
+        value: /opt/render/project/src/data-v2.db
+      - key: SESSION_SECRET
+        generateValue: true
+    disk:
+      name: acu-lms-data
+      mountPath: /var/data
+      sizeGB: 1
