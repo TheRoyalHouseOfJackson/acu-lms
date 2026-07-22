@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Program } from "@/lib/types";
 import { LEVELS } from "@/lib/types";
 import { Search } from "lucide-react";
+import { DiamondHero } from "@/components/DiamondHero";
 
 export default function Programs() {
   const search = useSearch();
@@ -31,14 +32,12 @@ export default function Programs() {
 
   return (
     <SiteLayout>
-      <section className="border-b border-border bg-gradient-to-br from-primary to-[hsl(347_40%_24%)] py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6">
-          <h1 className="font-serif text-5xl text-background">Degree Programs</h1>
-          <p className="mt-3 max-w-2xl text-background/80">
-            Explore all 38 self-paced, faith-based programs. Filter by level to find your calling.
-          </p>
-        </div>
-      </section>
+      <DiamondHero size="md">
+        <h1 className="font-serif text-5xl text-background">Degree Programs</h1>
+        <p className="mt-3 max-w-2xl text-background/80">
+          Explore all 38 self-paced, faith-based programs. Filter by level to find your calling.
+        </p>
+      </DiamondHero>
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         {/* Filters */}

@@ -4,6 +4,7 @@ import { SiteLayout } from "@/components/SiteLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LogoMark } from "@/components/Logo";
+import { DiamondHero } from "@/components/DiamondHero";
 import type { Program } from "@/lib/types";
 import { GraduationCap, BookOpen, Award, Clock, Quote, ArrowRight } from "lucide-react";
 
@@ -20,14 +21,10 @@ export default function Home() {
   return (
     <SiteLayout>
       {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(347_40%_24%)]" />
-        <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(circle at 20% 30%, white 1px, transparent 1px)", backgroundSize: "28px 28px" }} />
-        <div className="relative mx-auto max-w-7xl px-4 py-24 sm:px-6 sm:py-32 text-center">
-          <div className="mx-auto mb-8 flex justify-center">
-            <div className="rounded-2xl bg-background/10 p-3 ring-1 ring-accent/40">
-              <LogoMark size={64} />
-            </div>
+      <DiamondHero size="lg">
+        <div className="text-center">
+          <div className="mx-auto mb-6 flex justify-center">
+            <LogoMark size={210} className="drop-shadow-[0_0_18px_rgba(255,255,255,0.35)] [filter:brightness(0)_invert(1)]" />
           </div>
           <p className="mb-4 text-sm font-medium uppercase tracking-[0.25em] text-accent">Ambassadors Christian University</p>
           <h1 className="mx-auto max-w-4xl font-serif text-5xl leading-[1.05] text-background sm:text-7xl">
@@ -50,7 +47,7 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </section>
+      </DiamondHero>
 
       {/* STATS */}
       <section className="border-b border-border bg-card">

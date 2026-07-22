@@ -29,7 +29,7 @@ export default function Certificate() {
           {/* gold inner frame */}
           <div className="pointer-events-none absolute inset-4 rounded border border-accent/50" />
           <div className="relative">
-            <div className="mb-6 flex justify-center"><LogoMark size={64} /></div>
+            <div className="mb-6 flex justify-center"><LogoMark size={96} /></div>
             <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">Ambassadors Christian University</p>
             <h1 className="mt-6 font-serif text-4xl text-primary sm:text-5xl">Certificate of Completion</h1>
             <p className="mt-8 text-sm uppercase tracking-widest text-muted-foreground">This certifies that</p>

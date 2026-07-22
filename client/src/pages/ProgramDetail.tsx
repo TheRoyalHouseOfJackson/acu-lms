@@ -1,13 +1,11 @@
 import { useRoute, useLocation, Link } from "wouter";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/lib/auth";
-import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { ProgramDetail as PD } from "@/lib/types";
 import { Lock, PlayCircle, FileText, Video, CheckCircle2, BookOpen } from "lucide-react";
 
@@ -18,24 +16,13 @@ export default function ProgramDetail() {
   const slug = params?.slug;
   const [, navigate] = useLocation();
   const { user } = useAuth();
-  const { toast } = useToast();
 
   const { data: program, isLoading } = useQuery<PD>({
     queryKey: ["/api/programs", slug],
     enabled: !!slug,
   });
 
-  const enroll = useMutation({
-    mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/enrollments", { programId: program!.id });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/programs", slug] });
-      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/me"] });
-      toast({ title: "Enrolled!", description: `You're now enrolled in ${program?.title}.` });
-    },
-  });
+
 
   if (isLoading || !program) {
     return <SiteLayout><div className="mx-auto max-w-5xl px-4 py-16"><Skeleton className="h-64 w-full" /></div></SiteLayout>;
@@ -45,7 +32,7 @@ export default function ProgramDetail() {
 
   const handleEnroll = () => {
     if (!user) { navigate("/login"); return; }
-    enroll.mutate();
+    navigate(`/checkout/${program.slug}`);
   };
 
   return (
@@ -128,8 +115,8 @@ export default function ProgramDetail() {
               <>
                 <p className="font-serif text-2xl text-foreground">${program.tuition.toLocaleString()}</p>
                 <p className="text-sm text-muted-foreground">+ ${program.appFee} app fee</p>
-                <Button className="mt-5 w-full" onClick={handleEnroll} disabled={enroll.isPending} data-testid="button-enroll">
-                  {enroll.isPending ? "Enrolling..." : user ? "Enroll Now" : "Log in to Enroll"}
+                <Button className="mt-5 w-full" onClick={handleEnroll} data-testid="button-enroll">
+                  {user ? "Enroll & Pay" : "Log in to Enroll"}
                 </Button>
                 <p className="mt-3 text-center text-xs text-muted-foreground">Self-paced · Lifetime access · Certificate on completion</p>
               </>

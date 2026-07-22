@@ -1,19 +1,20 @@
 import { SiteLayout } from "@/components/SiteLayout";
 import { Card } from "@/components/ui/card";
 import { Heart, BookOpen, Users, Globe } from "lucide-react";
+import { DiamondHero } from "@/components/DiamondHero";
 
 export default function About() {
   return (
     <SiteLayout>
-      <section className="border-b border-border bg-gradient-to-br from-primary to-[hsl(347_40%_24%)] py-16">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 text-center">
+      <DiamondHero size="md">
+        <div className="mx-auto max-w-4xl text-center">
           <h1 className="font-serif text-5xl text-background">Our Mission</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-background/80">
             To equip and empower faithful servants — pastors, counselors, chaplains, and leaders —
             for a lifetime of Kingdom service.
           </p>
         </div>
-      </section>
+      </DiamondHero>
 
       <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
         <div className="prose-lg space-y-6 text-foreground/90">

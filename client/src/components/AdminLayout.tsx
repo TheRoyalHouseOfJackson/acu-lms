@@ -3,12 +3,15 @@ import { Link, useLocation } from "wouter";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { LayoutDashboard, BookOpen, Users, LogOut, ExternalLink } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, LogOut, ExternalLink, CreditCard, Receipt, Award } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/programs", label: "Programs", icon: BookOpen },
   { href: "/admin/students", label: "Students", icon: Users },
+  { href: "/admin/scholarships", label: "Scholarships", icon: Award },
+  { href: "/admin/payments", label: "Payments", icon: Receipt },
+  { href: "/admin/paypal", label: "PayPal Setup", icon: CreditCard },
 ];
 
 export function AdminLayout({ children }: { children: ReactNode }) {
@@ -27,7 +30,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-background">
       <aside className="hidden w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex">
         <div className="border-b border-sidebar-border p-4">
-          <Link href="/admin"><a><Logo /></a></Link>
+          <Link href="/admin"><a><Logo tone="light" size={57} /></a></Link>
           <p className="mt-2 text-xs uppercase tracking-wider text-accent">Admin Console</p>
         </div>
         <nav className="flex-1 space-y-1 p-3">
@@ -53,7 +56,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <div className="flex-1">
         {/* mobile top bar */}
         <div className="flex items-center justify-between border-b border-border bg-sidebar px-4 py-3 text-sidebar-foreground md:hidden">
-          <Logo size={32} />
+          <Logo size={42} tone="light" />
           <div className="flex gap-2">
             {NAV.map((n) => (
               <Link key={n.href} href={n.href}><Button size="sm" variant="ghost" className="text-sidebar-foreground">{n.label}</Button></Link>

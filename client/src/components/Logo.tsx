@@ -1,43 +1,51 @@
-export function LogoMark({ className = "", size = 40 }: { className?: string; size?: number }) {
-  // ACU monogram: an open book forming an "A", with a cross/flame flourish above.
+import crestUrl from "@assets/acu-crest.png";
+
+export function LogoMark({
+  className = "",
+  size = 48,
+}: {
+  className?: string;
+  size?: number;
+}) {
   return (
-    <svg
+    <img
+      src={crestUrl}
       width={size}
       height={size}
-      viewBox="0 0 48 48"
-      fill="none"
-      className={className}
-      aria-label="Ambassadors Christian University"
-      role="img"
-    >
-      <rect width="48" height="48" rx="10" fill="hsl(347 47% 33%)" />
-      {/* Open book pages forming an A */}
-      <path
-        d="M24 10 L34 38 M24 10 L14 38 M18 30 H30"
-        stroke="hsl(42 48% 59%)"
-        strokeWidth="2.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      {/* flame / spire above */}
-      <path
-        d="M24 10 V4 M20.5 6.5 H27.5"
-        stroke="hsl(38 43% 94%)"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
+      alt="Ambassadors Christian University crest"
+      className={`select-none object-contain ${className}`}
+      draggable={false}
+      style={{ width: size, height: size }}
+    />
   );
 }
 
-export function Logo({ className = "", showText = true, size = 40 }: { className?: string; showText?: boolean; size?: number }) {
+export function Logo({
+  className = "",
+  showText = false,
+  size = 73,
+  tone = "dark",
+}: {
+  className?: string;
+  /** The crest already contains the wordmark. Only enable text for very small marks. */
+  showText?: boolean;
+  size?: number;
+  /**
+   * "dark" (default): render the crest as-is on light backgrounds.
+   * "light": invert the crest to white so it reads on dark backgrounds (sidebar, footer).
+   */
+  tone?: "dark" | "light";
+}) {
+  const filter = tone === "light" ? "[filter:brightness(0)_invert(1)]" : "";
   return (
     <div className={`flex items-center gap-3 ${className}`} data-testid="link-logo">
-      <LogoMark size={size} />
+      <LogoMark size={size} className={filter} />
       {showText && (
         <div className="flex flex-col leading-none">
-          <span className="font-serif text-xl tracking-tight text-primary">Ambassadors</span>
-          <span className="text-[0.65rem] uppercase tracking-[0.2em] text-muted-foreground font-medium">
+          <span className={`font-serif text-xl tracking-tight ${tone === "light" ? "text-background" : "text-primary"}`}>
+            Ambassadors
+          </span>
+          <span className={`text-[0.65rem] uppercase tracking-[0.2em] font-medium ${tone === "light" ? "text-background/70" : "text-muted-foreground"}`}>
             Christian University
           </span>
         </div>

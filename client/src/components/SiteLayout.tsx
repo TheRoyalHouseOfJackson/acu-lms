@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { Menu, X, LogOut, LayoutDashboard, Shield } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Shield, Receipt } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -55,6 +55,9 @@ export function Navbar() {
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => navigate("/dashboard")} data-testid="menu-dashboard">
                   <LayoutDashboard className="mr-2 h-4 w-4" /> Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/billing")} data-testid="menu-billing">
+                  <Receipt className="mr-2 h-4 w-4" /> Billing
                 </DropdownMenuItem>
                 {user.role === "admin" && (
                   <DropdownMenuItem onClick={() => navigate("/admin")} data-testid="menu-admin">
@@ -114,7 +117,7 @@ export function Footer() {
     <footer className="mt-20 border-t border-border bg-sidebar text-sidebar-foreground">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div>
-          <Logo />
+          <Logo tone="light" size={84} />
           <p className="mt-4 max-w-xs text-sm text-sidebar-foreground/70">
             A private online Christian university preparing servants for the Kingdom through
             self-paced, faith-based degree programs.
@@ -132,9 +135,9 @@ export function Footer() {
         <div>
           <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-accent">Contact</h4>
           <p className="text-sm text-sidebar-foreground/80">
-            Mobile, Alabama<br />
+            Baton Rouge, Louisiana<br />
             info@acu.edu<br />
-            (251) 555-0100
+            (225) 555-0100
           </p>
         </div>
       </div>

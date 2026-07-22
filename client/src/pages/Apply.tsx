@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
+import { DiamondHero } from "@/components/DiamondHero";
 import type { Program } from "@/lib/types";
 import { CheckCircle2 } from "lucide-react";
 
@@ -63,11 +64,16 @@ export default function Apply() {
 
   return (
     <SiteLayout>
+      <DiamondHero size="md">
+        <div className="mx-auto max-w-3xl text-center">
+          <h1 className="font-serif text-5xl text-background">Apply / Enroll</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-lg text-background/80">
+            {user ? "Complete your program application below." : "Create your student account and tell us about your calling."}
+          </p>
+        </div>
+      </DiamondHero>
+
       <div className="mx-auto max-w-2xl px-4 py-14 sm:px-6">
-        <h1 className="font-serif text-4xl text-primary">Apply / Enroll</h1>
-        <p className="mt-2 text-muted-foreground">
-          {user ? "Complete your program application below." : "Create your student account and tell us about your calling."}
-        </p>
 
         <Card className="mt-8 p-6">
           <form onSubmit={submit} className="space-y-5">

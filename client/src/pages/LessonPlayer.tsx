@@ -71,7 +71,7 @@ export default function LessonPlayer() {
       {/* Sidebar */}
       <aside className="border-b border-border bg-sidebar text-sidebar-foreground lg:w-80 lg:shrink-0 lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-2 border-b border-sidebar-border p-4">
-          <Link href="/dashboard"><a className="flex items-center gap-2" data-testid="link-sidebar-home"><LogoMark size={28} /><span className="font-serif text-lg">Ambassadors</span></a></Link>
+          <Link href="/dashboard"><a className="flex items-center gap-2" data-testid="link-sidebar-home"><LogoMark size={36} /><span className="font-serif text-lg">Ambassadors</span></a></Link>
         </div>
         <div className="p-4">
           <Link href={`/programs/${slug}`}><a className="text-xs text-sidebar-foreground/60 hover:text-accent">← {program.title}</a></Link>

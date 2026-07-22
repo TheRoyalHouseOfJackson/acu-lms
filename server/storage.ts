@@ -1,17 +1,19 @@
 import {
   users, programs, courses, lessons, enrollments, lessonProgress,
   quizzes, quizQuestions, quizAttempts, certificates,
+  settings, paymentPlans, paymentTransactions, scholarships,
 } from "@shared/schema";
 import type {
   User, InsertUser, Program, InsertProgram, Course, InsertCourse,
   Lesson, InsertLesson, Enrollment, LessonProgress, Quiz, InsertQuiz,
   QuizQuestion, InsertQuizQuestion, QuizAttempt, Certificate,
+  Setting, PaymentPlan, PaymentTransaction, Scholarship,
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
 import { eq, and, asc } from "drizzle-orm";
 
-const sqlite = new Database("data.db");
+const sqlite = new Database("data-v2.db");
 sqlite.pragma("journal_mode = WAL");
 export const db = drizzle(sqlite);
 
@@ -93,7 +95,70 @@ CREATE TABLE IF NOT EXISTS certificates (
   issued_at INTEGER NOT NULL,
   public_id TEXT NOT NULL UNIQUE
 );
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS payment_plans (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  program_id INTEGER NOT NULL,
+  enrollment_id INTEGER NOT NULL,
+  plan_type TEXT NOT NULL,
+  total_cents INTEGER NOT NULL,
+  paid_cents INTEGER NOT NULL DEFAULT 0,
+  installment_cents INTEGER NOT NULL,
+  total_installments INTEGER NOT NULL DEFAULT 1,
+  paid_installments INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  paypal_subscription_id TEXT NOT NULL DEFAULT '',
+  paypal_plan_id TEXT NOT NULL DEFAULT '',
+  paypal_order_id TEXT NOT NULL DEFAULT '',
+  next_billing_at INTEGER NOT NULL DEFAULT 0,
+  failure_count INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS payment_transactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  plan_id INTEGER NOT NULL,
+  user_id INTEGER NOT NULL,
+  amount_cents INTEGER NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'USD',
+  status TEXT NOT NULL,
+  paypal_capture_id TEXT NOT NULL DEFAULT '',
+  paypal_order_id TEXT NOT NULL DEFAULT '',
+  paypal_subscription_id TEXT NOT NULL DEFAULT '',
+  event_type TEXT NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS scholarships (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  program_id INTEGER NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  discount_type TEXT NOT NULL,
+  discount_value INTEGER NOT NULL,
+  waive_app_fee INTEGER NOT NULL DEFAULT 0,
+  note TEXT NOT NULL DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL,
+  created_by INTEGER NOT NULL DEFAULT 0
+);
 `);
+
+// One-time migration: enforce official application fees per degree level.
+// Idempotent — safe to run on every boot.
+try {
+  sqlite.exec(`
+    UPDATE programs SET app_fee = 55 WHERE level = 'Bachelor''s' AND app_fee <> 55;
+    UPDATE programs SET app_fee = 75 WHERE level = 'Master''s' AND app_fee <> 75;
+    UPDATE programs SET app_fee = 95 WHERE level = 'Doctoral' AND app_fee <> 95;
+    UPDATE programs SET app_fee = 95 WHERE level = 'Dual' AND app_fee <> 95;
+  `);
+} catch (err) {
+  console.error("app-fee migration warning:", err);
+}
 
 export interface IStorage {
   // users
@@ -144,6 +209,32 @@ export interface IStorage {
   getCertificateByUserProgram(userId: number, programId: number): Promise<Certificate | undefined>;
   createCertificate(userId: number, programId: number, publicId: string): Promise<Certificate>;
   listCertificatesByUser(userId: number): Promise<Certificate[]>;
+  // settings
+  getSetting(key: string): Promise<string>;
+  setSetting(key: string, value: string): Promise<void>;
+  listSettings(): Promise<Setting[]>;
+  // payment plans
+  createPaymentPlan(p: Omit<PaymentPlan, "id" | "createdAt">): Promise<PaymentPlan>;
+  getPaymentPlan(id: number): Promise<PaymentPlan | undefined>;
+  getPaymentPlanByEnrollment(enrollmentId: number): Promise<PaymentPlan | undefined>;
+  getPaymentPlanBySubscriptionId(subId: string): Promise<PaymentPlan | undefined>;
+  getPaymentPlanByOrderId(orderId: string): Promise<PaymentPlan | undefined>;
+  updatePaymentPlan(id: number, patch: Partial<PaymentPlan>): Promise<PaymentPlan | undefined>;
+  listPaymentPlansByUser(userId: number): Promise<PaymentPlan[]>;
+  listAllPaymentPlans(): Promise<PaymentPlan[]>;
+  // transactions
+  recordTransaction(t: Omit<PaymentTransaction, "id" | "createdAt">): Promise<PaymentTransaction>;
+  listTransactionsByPlan(planId: number): Promise<PaymentTransaction[]>;
+  listTransactionsByUser(userId: number): Promise<PaymentTransaction[]>;
+  listAllTransactions(): Promise<PaymentTransaction[]>;
+  // scholarships
+  createScholarship(s: Omit<Scholarship, "id" | "createdAt">): Promise<Scholarship>;
+  getScholarship(id: number): Promise<Scholarship | undefined>;
+  getActiveScholarship(userId: number, programId: number): Promise<Scholarship | undefined>;
+  updateScholarship(id: number, patch: Partial<Scholarship>): Promise<Scholarship | undefined>;
+  deleteScholarship(id: number): Promise<void>;
+  listScholarshipsByUser(userId: number): Promise<Scholarship[]>;
+  listAllScholarships(): Promise<Scholarship[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -243,6 +334,88 @@ export class DatabaseStorage implements IStorage {
   }
   async listCertificatesByUser(userId: number) {
     return db.select().from(certificates).where(eq(certificates.userId, userId)).all();
+  }
+
+  // ---------- SETTINGS ----------
+  async getSetting(key: string): Promise<string> {
+    const row = db.select().from(settings).where(eq(settings.key, key)).get();
+    return row?.value ?? "";
+  }
+  async setSetting(key: string, value: string): Promise<void> {
+    const existing = db.select().from(settings).where(eq(settings.key, key)).get();
+    if (existing) {
+      db.update(settings).set({ value }).where(eq(settings.key, key)).run();
+    } else {
+      db.insert(settings).values({ key, value }).run();
+    }
+  }
+  async listSettings(): Promise<Setting[]> {
+    return db.select().from(settings).all();
+  }
+
+  // ---------- PAYMENT PLANS ----------
+  async createPaymentPlan(p: Omit<PaymentPlan, "id" | "createdAt">): Promise<PaymentPlan> {
+    return db.insert(paymentPlans).values({ ...p, createdAt: Date.now() }).returning().get();
+  }
+  async getPaymentPlan(id: number): Promise<PaymentPlan | undefined> {
+    return db.select().from(paymentPlans).where(eq(paymentPlans.id, id)).get();
+  }
+  async getPaymentPlanByEnrollment(enrollmentId: number): Promise<PaymentPlan | undefined> {
+    return db.select().from(paymentPlans).where(eq(paymentPlans.enrollmentId, enrollmentId)).get();
+  }
+  async getPaymentPlanBySubscriptionId(subId: string): Promise<PaymentPlan | undefined> {
+    return db.select().from(paymentPlans).where(eq(paymentPlans.paypalSubscriptionId, subId)).get();
+  }
+  async getPaymentPlanByOrderId(orderId: string): Promise<PaymentPlan | undefined> {
+    return db.select().from(paymentPlans).where(eq(paymentPlans.paypalOrderId, orderId)).get();
+  }
+  async updatePaymentPlan(id: number, patch: Partial<PaymentPlan>): Promise<PaymentPlan | undefined> {
+    return db.update(paymentPlans).set(patch).where(eq(paymentPlans.id, id)).returning().get();
+  }
+  async listPaymentPlansByUser(userId: number): Promise<PaymentPlan[]> {
+    return db.select().from(paymentPlans).where(eq(paymentPlans.userId, userId)).all();
+  }
+  async listAllPaymentPlans(): Promise<PaymentPlan[]> {
+    return db.select().from(paymentPlans).all();
+  }
+
+  // ---------- PAYMENT TRANSACTIONS ----------
+  async recordTransaction(t: Omit<PaymentTransaction, "id" | "createdAt">): Promise<PaymentTransaction> {
+    return db.insert(paymentTransactions).values({ ...t, createdAt: Date.now() }).returning().get();
+  }
+  async listTransactionsByPlan(planId: number): Promise<PaymentTransaction[]> {
+    return db.select().from(paymentTransactions).where(eq(paymentTransactions.planId, planId)).orderBy(asc(paymentTransactions.createdAt)).all();
+  }
+  async listTransactionsByUser(userId: number): Promise<PaymentTransaction[]> {
+    return db.select().from(paymentTransactions).where(eq(paymentTransactions.userId, userId)).orderBy(asc(paymentTransactions.createdAt)).all();
+  }
+  async listAllTransactions(): Promise<PaymentTransaction[]> {
+    return db.select().from(paymentTransactions).orderBy(asc(paymentTransactions.createdAt)).all();
+  }
+
+  // ---------- SCHOLARSHIPS ----------
+  async createScholarship(s: Omit<Scholarship, "id" | "createdAt">): Promise<Scholarship> {
+    return db.insert(scholarships).values({ ...s, createdAt: Date.now() }).returning().get();
+  }
+  async getScholarship(id: number) {
+    return db.select().from(scholarships).where(eq(scholarships.id, id)).get();
+  }
+  async getActiveScholarship(userId: number, programId: number) {
+    return db.select().from(scholarships).where(
+      and(eq(scholarships.userId, userId), eq(scholarships.programId, programId), eq(scholarships.active, 1))
+    ).get();
+  }
+  async updateScholarship(id: number, patch: Partial<Scholarship>) {
+    return db.update(scholarships).set(patch).where(eq(scholarships.id, id)).returning().get();
+  }
+  async deleteScholarship(id: number): Promise<void> {
+    db.delete(scholarships).where(eq(scholarships.id, id)).run();
+  }
+  async listScholarshipsByUser(userId: number): Promise<Scholarship[]> {
+    return db.select().from(scholarships).where(eq(scholarships.userId, userId)).all();
+  }
+  async listAllScholarships(): Promise<Scholarship[]> {
+    return db.select().from(scholarships).orderBy(asc(scholarships.createdAt)).all();
   }
 }
 

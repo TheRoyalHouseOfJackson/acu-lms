@@ -138,3 +138,69 @@ export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
 });
+
+// SETTINGS (single-row key/value for PayPal config etc.)
+export const settings = sqliteTable("settings", {
+  key: text("key").primaryKey(),
+  value: text("value").notNull().default(""),
+});
+export type Setting = typeof settings.$inferSelect;
+
+// PAYMENT PLANS attached to an enrollment
+// planType: full | quarterly | monthly
+// status: active | paused | completed | canceled
+export const paymentPlans = sqliteTable("payment_plans", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  programId: integer("program_id").notNull(),
+  enrollmentId: integer("enrollment_id").notNull(),
+  planType: text("plan_type").notNull(), // full | quarterly | monthly
+  totalCents: integer("total_cents").notNull(), // total tuition owed in cents
+  paidCents: integer("paid_cents").notNull().default(0),
+  installmentCents: integer("installment_cents").notNull(), // amount per installment
+  totalInstallments: integer("total_installments").notNull().default(1),
+  paidInstallments: integer("paid_installments").notNull().default(0),
+  status: text("status").notNull().default("active"),
+  paypalSubscriptionId: text("paypal_subscription_id").notNull().default(""),
+  paypalPlanId: text("paypal_plan_id").notNull().default(""),
+  paypalOrderId: text("paypal_order_id").notNull().default(""), // for full-pay orders
+  nextBillingAt: integer("next_billing_at").notNull().default(0), // ms epoch, informational
+  failureCount: integer("failure_count").notNull().default(0),
+  createdAt: integer("created_at").notNull(),
+});
+export type PaymentPlan = typeof paymentPlans.$inferSelect;
+
+// PAYMENT TRANSACTIONS — every charge (success or failure) is recorded
+export const paymentTransactions = sqliteTable("payment_transactions", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  planId: integer("plan_id").notNull(),
+  userId: integer("user_id").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  currency: text("currency").notNull().default("USD"),
+  status: text("status").notNull(), // completed | failed | pending | refunded
+  paypalCaptureId: text("paypal_capture_id").notNull().default(""),
+  paypalOrderId: text("paypal_order_id").notNull().default(""),
+  paypalSubscriptionId: text("paypal_subscription_id").notNull().default(""),
+  eventType: text("event_type").notNull().default(""), // webhook event or checkout
+  note: text("note").notNull().default(""),
+  createdAt: integer("created_at").notNull(),
+});
+export type PaymentTransaction = typeof paymentTransactions.$inferSelect;
+
+// Scholarships — grant students partial or full tuition discounts.
+// discountType: 'percent' (0-100) or 'fixed' (cents off tuition). 100% percent = full ride.
+// Application fee is separately waivable via waiveAppFee=1.
+export const scholarships = sqliteTable("scholarships", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  programId: integer("program_id").notNull(),
+  name: text("name").notNull().default(""),        // e.g. "Founder's Scholarship"
+  discountType: text("discount_type").notNull(),    // 'percent' | 'fixed'
+  discountValue: integer("discount_value").notNull(), // percent 0-100, or cents
+  waiveAppFee: integer("waive_app_fee").notNull().default(0), // 0|1
+  note: text("note").notNull().default(""),
+  active: integer("active").notNull().default(1),
+  createdAt: integer("created_at").notNull(),
+  createdBy: integer("created_by").notNull().default(0), // admin user id
+});
+export type Scholarship = typeof scholarships.$inferSelect;

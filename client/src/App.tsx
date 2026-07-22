@@ -19,8 +19,14 @@ import ProgramLearn from "@/pages/ProgramLearn";
 import LessonPlayer from "@/pages/LessonPlayer";
 import QuizPage from "@/pages/QuizPage";
 import Certificate from "@/pages/Certificate";
+import Checkout from "@/pages/Checkout";
+import Billing from "@/pages/Billing";
+import PaymentReturn from "@/pages/PaymentReturn";
 
 import AdminHome from "@/pages/admin/AdminHome";
+import AdminPayPal from "@/pages/admin/AdminPayPal";
+import AdminPayments from "@/pages/admin/AdminPayments";
+import AdminScholarships from "@/pages/admin/AdminScholarships";
 import AdminPrograms from "@/pages/admin/AdminPrograms";
 import AdminProgramDetail from "@/pages/admin/AdminProgramDetail";
 import AdminCourse from "@/pages/admin/AdminCourse";
@@ -43,6 +49,10 @@ function AppRouter() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/quizzes/:id" component={QuizPage} />
       <Route path="/certificates/:publicId" component={Certificate} />
+      <Route path="/checkout/:slug" component={Checkout} />
+      <Route path="/billing" component={Billing} />
+      <Route path="/payments/return" component={PaymentReturn} />
+      <Route path="/payments/cancel" component={PaymentReturn} />
 
       <Route path="/admin" component={AdminHome} />
       <Route path="/admin/programs" component={AdminPrograms} />
@@ -51,6 +61,9 @@ function AppRouter() {
       <Route path="/admin/lessons/:id" component={AdminLesson} />
       <Route path="/admin/students" component={AdminStudents} />
       <Route path="/admin/quizzes/:id" component={AdminQuiz} />
+      <Route path="/admin/paypal" component={AdminPayPal} />
+      <Route path="/admin/payments" component={AdminPayments} />
+      <Route path="/admin/scholarships" component={AdminScholarships} />
 
       <Route component={NotFound} />
     </Switch>

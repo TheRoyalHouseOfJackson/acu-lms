@@ -36,7 +36,7 @@ export default function Signup() {
   return (
     <SiteLayout>
       <div className="mx-auto max-w-md px-4 py-20">
-        <div className="mb-6 flex justify-center"><LogoMark size={56} /></div>
+        <div className="mb-6 flex justify-center"><LogoMark size={84} /></div>
         <h1 className="text-center font-serif text-4xl text-primary">Create Your Account</h1>
         <p className="mt-2 text-center text-muted-foreground">Join Ambassadors and begin your calling.</p>
         <Card className="mt-8 p-6">

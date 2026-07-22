@@ -11,6 +11,7 @@ import { randomUUID } from "node:crypto";
 import { storage } from "./storage";
 import { seed } from "./seed";
 import { signupSchema, loginSchema } from "@shared/schema";
+import { registerPaymentRoutes, enrollmentHasAccess } from "./paymentRoutes";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -68,12 +69,24 @@ async function programProgress(userId: number, programId: number) {
 export async function registerRoutes(httpServer: Server, app: Express): Promise<Server> {
   await seed();
 
+  // Cookie name must use __Host- prefix to survive the pplx.app proxy.
+  // In dev (http://localhost) __Host- also requires secure=true, so we
+  // fall back to a plain cookie name for local development.
+  const isProd = process.env.NODE_ENV === "production";
+  app.set("trust proxy", 1);
   app.use(session({
-    secret: "acu-lms-secret-key-change-me",
+    name: isProd ? "__Host-acu-sid" : "acu-sid",
+    secret: process.env.SESSION_SECRET || "acu-lms-secret-key-change-me",
     resave: false,
     saveUninitialized: false,
     store: new MemoryStore({ checkPeriod: 86400000 }),
-    cookie: { httpOnly: true, maxAge: 7 * 24 * 60 * 60 * 1000, sameSite: "lax" },
+    cookie: {
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: "lax",
+      secure: isProd,
+      path: "/",
+    },
   }));
 
   // Serve uploaded files
@@ -189,6 +202,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (!lesson) return res.status(404).json({ message: "Lesson not found" });
     const course = await storage.getCourse(lesson.courseId);
     let completed = false;
+    // Enforce payment-plan status: if student's plan is paused, block content but return metadata
+    if (req.session.userId && course && req.session.role !== "admin") {
+      const hasAccess = await enrollmentHasAccess(req.session.userId, course.programId);
+      if (!hasAccess) {
+        return res.status(402).json({
+          message: "Access paused due to payment issue. Please update your payment method to resume.",
+          paused: true,
+          programId: course.programId,
+        });
+      }
+    }
     if (req.session.userId) completed = !!(await storage.getProgress(req.session.userId, lesson.id));
     res.json({ ...lesson, course, completed });
   });
@@ -353,6 +377,9 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const students = await storage.listStudents();
     res.json({ programs: programs.length, students: students.length });
   });
+
+  // Register payment routes (PayPal + subscription management)
+  registerPaymentRoutes(app);
 
   return httpServer;
 }
