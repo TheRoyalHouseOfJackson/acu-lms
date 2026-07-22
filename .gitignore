@@ -9,3 +9,6 @@ uploaded_attachments/
 data.db
 data.db-shm
 data.db-wal
+data-v2.db
+data-v2.db-shm
+data-v2.db-wal

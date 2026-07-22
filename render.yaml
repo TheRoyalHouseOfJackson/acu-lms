@@ -16,9 +16,16 @@ services:
       - key: DB_PATH
         value: /var/data/data-v2.db
       - key: SEED_DB_PATH
-        value: /opt/render/project/src/data-v2.db
+        value: /opt/render/project/src/seed-db.sqlite
       - key: SESSION_SECRET
         generateValue: true
+      # Admin account created on first boot only. Set these in the Render dashboard.
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_NAME
+        value: Dr. Founder
     disk:
       name: acu-lms-data
       mountPath: /var/data
