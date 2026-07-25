@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import type { ProgramDetail as PD } from "@/lib/types";
 import { levelLabel } from "@/lib/types";
-import { Lock, PlayCircle, FileText, Video, CheckCircle2, BookOpen } from "lucide-react";
+import { Lock, PlayCircle, FileText, Video, CheckCircle2, BookOpen, Printer } from "lucide-react";
 
 const typeIcon: Record<string, any> = { video: Video, pdf: FileText, text: BookOpen };
 
@@ -111,6 +111,15 @@ export default function ProgramDetail() {
                     <PlayCircle className="mr-2 h-4 w-4" /> Continue Learning
                   </Button>
                 )}
+                <Button
+                  variant="outline"
+                  className="mt-3 w-full"
+                  onClick={() => navigate(`/programs/${program.slug}/print`)}
+                  data-testid="button-print-full-program"
+                >
+                  <Printer className="mr-2 h-4 w-4" /> Print Full Program
+                </Button>
+                <p className="mt-2 text-center text-xs text-muted-foreground">All lessons & quizzes in one printable document</p>
               </>
             ) : (
               <>

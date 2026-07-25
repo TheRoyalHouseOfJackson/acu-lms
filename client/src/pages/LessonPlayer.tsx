@@ -12,7 +12,7 @@ import { resolveVideo } from "@/lib/video";
 import { renderMarkdown } from "@/lib/markdown";
 import type { ProgramDetail } from "@/lib/types";
 import type { LessonProgress } from "@shared/schema";
-import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Check, FileText, Home, ClipboardCheck } from "lucide-react";
+import { CheckCircle2, Circle, ChevronLeft, ChevronRight, Check, FileText, Home, ClipboardCheck, Printer, Download } from "lucide-react";
 
 const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
 
@@ -67,9 +67,9 @@ export default function LessonPlayer() {
   const video = lesson.type === "video" ? resolveVideo(lesson.contentUrl) : null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background lg:flex-row">
+    <div className="flex min-h-screen flex-col bg-background lg:flex-row print:block">
       {/* Sidebar */}
-      <aside className="border-b border-border bg-sidebar text-sidebar-foreground lg:w-80 lg:shrink-0 lg:border-b-0 lg:border-r">
+      <aside className="border-b border-border bg-sidebar text-sidebar-foreground lg:w-80 lg:shrink-0 lg:border-b-0 lg:border-r print:hidden">
         <div className="flex items-center gap-2 border-b border-sidebar-border p-4">
           <Link href="/dashboard"><a className="flex items-center gap-2" data-testid="link-sidebar-home"><LogoMark size={36} /><span className="font-serif text-lg">Ambassadors</span></a></Link>
         </div>
@@ -115,8 +115,32 @@ export default function LessonPlayer() {
       {/* Main */}
       <main className="flex-1">
         <div className="mx-auto max-w-4xl px-4 py-8 sm:px-8">
-          <p className="text-xs uppercase tracking-wider text-muted-foreground">{lesson.courseTitle}</p>
-          <h1 className="mt-1 font-serif text-3xl text-foreground" data-testid="text-lesson-title">{lesson.title}</h1>
+          <div className="flex items-start justify-between gap-4 print:block">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">{lesson.courseTitle}</p>
+              <h1 className="mt-1 font-serif text-3xl text-foreground" data-testid="text-lesson-title">{lesson.title}</h1>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 print:hidden">
+              {lesson.type === "pdf" && lesson.contentUrl && (
+                <a
+                  href={`${API_BASE}${lesson.contentUrl}`}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-testid="button-download-pdf"
+                >
+                  <Button variant="outline" size="sm">
+                    <Download className="mr-2 h-4 w-4" /> Download PDF
+                  </Button>
+                </a>
+              )}
+              {(lesson.type === "text" || lesson.type === "pdf") && (
+                <Button variant="outline" size="sm" onClick={() => window.print()} data-testid="button-print-lesson">
+                  <Printer className="mr-2 h-4 w-4" /> Print
+                </Button>
+              )}
+            </div>
+          </div>
 
           <div className="mt-6">
             {/* VIDEO */}
@@ -157,7 +181,7 @@ export default function LessonPlayer() {
           </div>
 
           {/* Actions */}
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6 print:hidden">
             <Button
               variant={isDone ? "outline" : "default"}
               onClick={() => complete.mutate()}

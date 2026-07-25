@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import { apiRequest } from "@/lib/queryClient";
 import type { QuizDetail } from "@/lib/types";
-import { CheckCircle2, XCircle, ClipboardCheck } from "lucide-react";
+import { CheckCircle2, XCircle, ClipboardCheck, Printer } from "lucide-react";
 
 type Result = { score: number; passed: boolean; correct: number; total: number; passingScore: number };
 
@@ -55,27 +55,37 @@ export default function QuizPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-        <div className="flex items-center gap-2 text-accent-foreground">
-          <ClipboardCheck className="h-5 w-5 text-primary" />
-          <span className="text-xs uppercase tracking-wider text-muted-foreground">Quiz · {quiz.passingScore}% to pass</span>
+      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 print:max-w-full print:py-4">
+        <div className="flex items-start justify-between gap-4 print:block">
+          <div>
+            <div className="flex items-center gap-2 text-accent-foreground">
+              <ClipboardCheck className="h-5 w-5 text-primary" />
+              <span className="text-xs uppercase tracking-wider text-muted-foreground">Quiz · {quiz.passingScore}% to pass</span>
+            </div>
+            <h1 className="mt-1 font-serif text-4xl text-primary" data-testid="text-quiz-title">{quiz.title}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{quiz.questions.length} questions · multiple choice</p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => window.print()} className="shrink-0 print:hidden" data-testid="button-print-quiz">
+            <Printer className="mr-2 h-4 w-4" /> Print / Study
+          </Button>
         </div>
-        <h1 className="mt-1 font-serif text-4xl text-primary" data-testid="text-quiz-title">{quiz.title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{quiz.questions.length} questions · multiple choice</p>
+        <p className="mt-4 hidden text-sm text-muted-foreground print:block">
+          Name: ______________________________ &nbsp;&nbsp; Date: ______________
+        </p>
 
-        <div className="mt-8 space-y-6">
+        <div className="mt-8 space-y-6 print:mt-4 print:space-y-4">
           {quiz.questions.map((q, i) => (
-            <Card key={q.id} className="p-5" data-testid={`quiz-question-${q.id}`}>
+            <Card key={q.id} className="p-5 print:border-0 print:p-2 print:shadow-none" data-testid={`quiz-question-${q.id}`}>
               <p className="font-medium text-foreground">{i + 1}. {q.question}</p>
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 space-y-2 print:mt-2 print:space-y-1">
                 {q.options.map((opt, oi) => (
                   <button
                     key={oi}
                     onClick={() => setAnswers((a) => ({ ...a, [q.id]: oi }))}
-                    className={`flex w-full items-center gap-3 rounded-md border px-4 py-2.5 text-left text-sm hover-elevate ${answers[q.id] === oi ? "border-primary bg-primary/5" : "border-border"}`}
+                    className={`flex w-full items-center gap-3 rounded-md border px-4 py-2.5 text-left text-sm hover-elevate ${answers[q.id] === oi ? "border-primary bg-primary/5" : "border-border"} print:border-0 print:px-0 print:py-1 print:hover:bg-transparent`}
                     data-testid={`option-${q.id}-${oi}`}
                   >
-                    <span className={`flex h-5 w-5 items-center justify-center rounded-full border text-xs ${answers[q.id] === oi ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"}`}>
+                    <span className={`flex h-5 w-5 items-center justify-center rounded-full border text-xs ${answers[q.id] === oi ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground"} print:border-black print:bg-transparent print:text-black`}>
                       {String.fromCharCode(65 + oi)}
                     </span>
                     {opt}
@@ -86,7 +96,7 @@ export default function QuizPage() {
           ))}
         </div>
 
-        <div className="mt-8">
+        <div className="mt-8 print:hidden">
           <Progress value={(Object.keys(answers).length / quiz.questions.length) * 100} className="mb-3 h-1.5" />
           <Button className="w-full" disabled={!allAnswered || submit.isPending} onClick={() => submit.mutate()} data-testid="button-submit-quiz">
             {submit.isPending ? "Submitting..." : allAnswered ? "Submit Quiz" : `Answer all ${quiz.questions.length} questions`}

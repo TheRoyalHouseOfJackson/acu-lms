@@ -16,6 +16,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Dashboard from "@/pages/Dashboard";
 import ProgramLearn from "@/pages/ProgramLearn";
+import ProgramPrint from "@/pages/ProgramPrint";
 import LessonPlayer from "@/pages/LessonPlayer";
 import QuizPage from "@/pages/QuizPage";
 import Certificate from "@/pages/Certificate";
@@ -40,6 +41,7 @@ function AppRouter() {
       <Route path="/" component={Home} />
       <Route path="/programs" component={Programs} />
       <Route path="/programs/:slug/learn" component={ProgramLearn} />
+      <Route path="/programs/:slug/print" component={ProgramPrint} />
       <Route path="/programs/:slug/courses/:courseId/lessons/:lessonId" component={LessonPlayer} />
       <Route path="/programs/:slug" component={ProgramDetail} />
       <Route path="/about" component={About} />

@@ -24,7 +24,7 @@ export function Navbar() {
   const initials = user?.name?.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase() ?? "";
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/90 backdrop-blur print:hidden">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6">
         <Link href="/"><a data-testid="link-home"><Logo /></a></Link>
 
@@ -114,7 +114,7 @@ export function Navbar() {
 
 export function Footer() {
   return (
-    <footer className="mt-20 border-t border-border bg-sidebar text-sidebar-foreground">
+    <footer className="mt-20 border-t border-border bg-sidebar text-sidebar-foreground print:hidden">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-12 sm:px-6 md:grid-cols-3">
         <div>
           <Logo tone="light" size={84} />
