@@ -1,0 +1,11 @@
+node_modules
+dist
+data.db*
+data-v2.db
+.git
+.gitignore
+qa
+attached_assets/*.mp4
+uploaded_attachments
+*.log
+.DS_Store

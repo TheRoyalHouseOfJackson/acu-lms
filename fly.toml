@@ -1,0 +1,48 @@
+# fly.toml — ACU LMS on Fly.io
+# App name is set at first `fly launch` / `fly deploy --app <name>`
+
+primary_region = "iad"  # Ashburn, VA — closest to Baton Rouge
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  DB_PATH = "/data/data-v2.db"
+  SEED_DB_PATH = "/app/seed-db.sqlite"
+
+# Persistent volume mounted at /data — survives redeploys and restarts.
+# Signups, enrollments, and progress live here.
+[[mounts]]
+  source = "acu_lms_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # auto_stop_machines=false keeps the machine always-on (no cold starts)
+  # Free tier allows up to 3 always-on shared-cpu-1x machines.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+[[vm]]
+  # Free tier: shared-cpu-1x with 256MB. Bumping to 512MB to be safe with
+  # better-sqlite3 memory usage — still within free allowances for a single machine.
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "30s"
+  method = "GET"
+  timeout = "5s"
+  path = "/api/programs"

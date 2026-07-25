@@ -1,0 +1,36 @@
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    concurrency: fly-deploy-${{ github.ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Ensure app secrets are set (idempotent)
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+        run: |
+          # --stage: set secrets in vault but don't restart machines (deploy will do that)
+          flyctl secrets set \
+            SESSION_SECRET="$SESSION_SECRET" \
+            ADMIN_EMAIL="$ADMIN_EMAIL" \
+            ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+            ADMIN_NAME="$ADMIN_NAME" \
+            --app acu-lms --stage
+
+      - name: Deploy to Fly
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: flyctl deploy --remote-only --wait-timeout 600 --app acu-lms
