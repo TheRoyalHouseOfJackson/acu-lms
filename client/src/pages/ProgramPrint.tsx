@@ -120,21 +120,21 @@ export default function ProgramPrint() {
       {/* Printable content */}
       <div className="mx-auto max-w-4xl px-6 py-10 print:px-0 print:py-4">
         {/* Cover */}
-        <header className="relative border-b border-border pb-6 print:break-after-page print:min-h-[9in] print:pb-0">
-          {/* Cover logo — only shown on print */}
-          <div className="print-cover-logo mb-8 flex justify-center print:mb-10">
-            <LogoMark size={140} />
-          </div>
-          {/* Watermarked large crest behind the title on print */}
+        <header className="relative border-b border-border pb-6 print:break-after-page print:flex print:min-h-[9.5in] print:flex-col print:items-center print:justify-center print:border-b-0 print:pb-0">
+          {/* Watermarked large crest behind the title — print only */}
           <div className="print-cover-watermark pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.06]">
-            <LogoMark size={520} />
+            <LogoMark size={560} />
           </div>
-          <div className="relative">
+          {/* Cover logo — print only, centered above title */}
+          <div className="print-cover-logo relative mx-auto mb-8 flex w-full justify-center print:mb-12">
+            <LogoMark size={150} />
+          </div>
+          <div className="relative w-full">
             <p className="text-center text-xs uppercase tracking-widest text-muted-foreground print:text-[10pt]">Ambassadors Christian University</p>
             <h1 className="mt-2 text-center font-serif text-4xl leading-tight text-primary print:mt-6 print:text-[32pt]">{program.title}</h1>
             <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted-foreground print:mt-6 print:text-[12pt]">{program.description}</p>
           </div>
-          <div className="relative mt-6 grid grid-cols-2 gap-4 text-sm print:mt-16 sm:grid-cols-4">
+          <div className="relative mt-6 grid w-full grid-cols-2 gap-4 text-sm print:mt-20 sm:grid-cols-4">
             <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Level</p>
               <p className="mt-1 font-medium text-foreground">{program.level}</p>
