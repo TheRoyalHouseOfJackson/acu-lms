@@ -29,6 +29,19 @@ export type QuizDetail = Quiz & { questions: QuizQuestion[]; course: Course };
 
 export const LEVELS = ["Bachelor's", "Master's", "Doctoral", "Dual"] as const;
 
+// Display labels for levels. The DB value stays as `LEVELS[i]`; UI shows this label.
+// Keep DB value `"Dual"` unchanged so filter routing, enrollments, and seed data all still work.
+export const LEVEL_LABELS: Record<string, string> = {
+  "Bachelor's": "Bachelor's",
+  "Master's": "Master's",
+  "Doctoral": "Doctoral",
+  "Dual": "Dual Degrees",
+};
+
+export function levelLabel(level: string): string {
+  return LEVEL_LABELS[level] ?? level;
+}
+
 export function fmtTuition(n: number) {
   return `$${n.toLocaleString()}`;
 }

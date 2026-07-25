@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import type { ProgramDetail as PD } from "@/lib/types";
+import { levelLabel } from "@/lib/types";
 import { Lock, PlayCircle, FileText, Video, CheckCircle2, BookOpen } from "lucide-react";
 
 const typeIcon: Record<string, any> = { video: Video, pdf: FileText, text: BookOpen };
@@ -40,7 +41,7 @@ export default function ProgramDetail() {
       <section className="border-b border-border bg-gradient-to-br from-primary to-[hsl(347_40%_24%)] py-14">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <Link href="/programs"><a className="text-sm text-background/70 hover:text-accent" data-testid="link-back-programs">← All Programs</a></Link>
-          <span className="mt-4 block w-fit rounded-full bg-accent/20 px-3 py-1 text-xs font-medium uppercase tracking-wider text-accent">{program.level}</span>
+          <span className="mt-4 block w-fit rounded-full bg-accent/20 px-3 py-1 text-xs font-medium uppercase tracking-wider text-accent">{levelLabel(program.level)}</span>
           <h1 className="mt-3 font-serif text-4xl leading-tight text-background sm:text-5xl" data-testid="text-program-title">{program.title}</h1>
           <div className="mt-6 flex flex-wrap items-center gap-4">
             <span className="text-2xl font-semibold text-background">${program.tuition.toLocaleString()}</span>

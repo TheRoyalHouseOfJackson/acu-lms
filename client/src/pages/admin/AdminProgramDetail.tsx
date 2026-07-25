@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import type { Program } from "@/lib/types";
+import { levelLabel } from "@/lib/types";
 import { Plus, ChevronRight, Trash2 } from "lucide-react";
 
 type Course = { id: number; title: string; description: string; position: number; lessons: any[] };
@@ -63,7 +64,7 @@ export default function AdminProgramDetail() {
     <AdminLayout>
       <Link href="/admin/programs"><a className="text-sm text-muted-foreground hover:text-primary">← All Programs</a></Link>
       <h1 className="mt-2 font-serif text-3xl text-primary">{program.title}</h1>
-      <span className="mt-1 inline-block rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{program.level}</span>
+      <span className="mt-1 inline-block rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{levelLabel(program.level)}</span>
 
       {/* Edit program */}
       <Card className="mt-6 p-6">

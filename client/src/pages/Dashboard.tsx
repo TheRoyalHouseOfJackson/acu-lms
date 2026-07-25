@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth";
 import type { EnrollmentDetail } from "@/lib/types";
+import { levelLabel } from "@/lib/types";
 import { PlayCircle, Award, BookOpen, GraduationCap } from "lucide-react";
 
 export default function Dashboard() {
@@ -70,7 +71,7 @@ export default function Dashboard() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {active.map((e) => (
               <Card key={e.id} className="flex flex-col p-6" data-testid={`card-enrollment-${e.programId}`}>
-                <span className="mb-2 w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{e.program.level}</span>
+                <span className="mb-2 w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{levelLabel(e.program.level)}</span>
                 <h3 className="font-serif text-lg leading-tight text-foreground">{e.program.title}</h3>
                 <div className="mt-4">
                   <div className="mb-1 flex justify-between text-xs text-muted-foreground"><span>Progress</span><span>{e.progress.percent}%</span></div>

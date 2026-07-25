@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Program } from "@/lib/types";
-import { LEVELS } from "@/lib/types";
+import { LEVELS, levelLabel } from "@/lib/types";
 import { Search, ChevronRight } from "lucide-react";
 
 export default function AdminPrograms() {
@@ -28,7 +28,7 @@ export default function AdminPrograms() {
       <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           {["All", ...LEVELS].map((l) => (
-            <Button key={l} size="sm" variant={level === l ? "default" : "outline"} onClick={() => setLevel(l)} data-testid={`admin-filter-${l}`}>{l}</Button>
+            <Button key={l} size="sm" variant={level === l ? "default" : "outline"} onClick={() => setLevel(l)} data-testid={`admin-filter-${l}`}>{l === "All" ? "All" : levelLabel(l)}</Button>
           ))}
         </div>
         <div className="relative w-full sm:w-64">
@@ -43,7 +43,7 @@ export default function AdminPrograms() {
             <Link key={p.id} href={`/admin/programs/${p.id}`}>
               <Card className="flex cursor-pointer items-center justify-between p-4 hover-elevate" data-testid={`admin-program-${p.id}`}>
                 <div className="flex items-center gap-3">
-                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{p.level}</span>
+                  <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{levelLabel(p.level)}</span>
                   <span className="font-medium text-foreground">{p.title}</span>
                 </div>
                 <div className="flex items-center gap-4">

@@ -6,13 +6,14 @@ import { Card } from "@/components/ui/card";
 import { LogoMark } from "@/components/Logo";
 import { DiamondHero } from "@/components/DiamondHero";
 import type { Program } from "@/lib/types";
+import { levelLabel } from "@/lib/types";
 import { GraduationCap, BookOpen, Award, Clock, Quote, ArrowRight } from "lucide-react";
 
 const LEVELS = [
-  { name: "Bachelor's", icon: BookOpen, blurb: "Build a strong biblical and academic foundation.", count: 12 },
-  { name: "Master's", icon: GraduationCap, blurb: "Deepen theological understanding and practical skill.", count: 12 },
-  { name: "Doctoral", icon: Award, blurb: "Lead at the highest levels of scholarship and ministry.", count: 10 },
-  { name: "Dual", icon: GraduationCap, blurb: "Earn two credentials on one accelerated pathway.", count: 4 },
+  { name: "Bachelor's", label: "Bachelor's", icon: BookOpen, blurb: "Build a strong biblical and academic foundation.", count: 12 },
+  { name: "Master's", label: "Master's", icon: GraduationCap, blurb: "Deepen theological understanding and practical skill.", count: 12 },
+  { name: "Doctoral", label: "Doctoral", icon: Award, blurb: "Lead at the highest levels of scholarship and ministry.", count: 10 },
+  { name: "Dual", label: "Dual Degrees", icon: GraduationCap, blurb: "Earn two credentials on one accelerated pathway.", count: 4 },
 ];
 
 export default function Home() {
@@ -78,7 +79,7 @@ export default function Home() {
             <Link key={l.name} href={`/programs?level=${encodeURIComponent(l.name)}`}>
               <Card className="group h-full cursor-pointer p-6 hover-elevate" data-testid={`card-level-${l.name}`}>
                 <l.icon className="mb-4 h-8 w-8 text-primary" />
-                <h3 className="font-serif text-2xl text-foreground">{l.name}</h3>
+                <h3 className="font-serif text-2xl text-foreground">{l.label}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{l.blurb}</p>
                 <p className="mt-4 text-sm font-semibold text-accent-foreground">
                   <span className="rounded-full bg-accent/20 px-2 py-0.5">{l.count} programs</span>
@@ -103,7 +104,7 @@ export default function Home() {
             {(programs ?? []).slice(0, 6).map((p) => (
               <Link key={p.id} href={`/programs/${p.slug}`}>
                 <Card className="flex h-full flex-col p-6 hover-elevate cursor-pointer" data-testid={`card-featured-${p.id}`}>
-                  <span className="mb-2 w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{p.level}</span>
+                  <span className="mb-2 w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{levelLabel(p.level)}</span>
                   <h3 className="font-serif text-xl text-foreground">{p.title}</h3>
                   <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">{p.description}</p>
                   <p className="mt-4 text-sm font-semibold text-foreground">${p.tuition.toLocaleString()} tuition</p>

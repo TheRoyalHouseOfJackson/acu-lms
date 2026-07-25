@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Program } from "@/lib/types";
-import { LEVELS } from "@/lib/types";
+import { LEVELS, levelLabel } from "@/lib/types";
 import { Search } from "lucide-react";
 import { DiamondHero } from "@/components/DiamondHero";
 
@@ -51,7 +51,7 @@ export default function Programs() {
                 onClick={() => setLevel(l)}
                 data-testid={`filter-${l}`}
               >
-                {l}
+                {l === "All" ? "All" : levelLabel(l)}
               </Button>
             ))}
           </div>
@@ -80,7 +80,7 @@ export default function Programs() {
             {filtered.map((p) => (
               <Link key={p.id} href={`/programs/${p.slug}`}>
                 <Card className="flex h-full cursor-pointer flex-col p-6 hover-elevate" data-testid={`card-program-${p.id}`}>
-                  <span className="mb-2 w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{p.level}</span>
+                  <span className="mb-2 w-fit rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">{levelLabel(p.level)}</span>
                   <h3 className="font-serif text-xl leading-tight text-foreground">{p.title}</h3>
                   <p className="mt-2 line-clamp-3 flex-1 text-sm text-muted-foreground">{p.description}</p>
                   <div className="mt-4 flex items-center justify-between border-t border-border pt-3">
