@@ -8,6 +8,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { renderMarkdown } from "@/lib/markdown";
 import type { ProgramDetail, QuizDetail } from "@/lib/types";
 import { Printer, ArrowLeft } from "lucide-react";
+import { LogoMark } from "@/components/Logo";
 
 const API_BASE = "__PORT_5000__".startsWith("__") ? "" : "__PORT_5000__";
 
@@ -62,7 +63,48 @@ export default function ProgramPrint() {
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
   return (
-    <div className="min-h-screen bg-background print:bg-white">
+    <div className="min-h-screen bg-background print:bg-white program-print">
+      {/* Print-only styles: page numbers, page size, bumped font sizes, cover watermark */}
+      <style>{`
+        @media print {
+          @page {
+            size: letter;
+            margin: 0.75in 0.6in 0.85in 0.6in;
+            @bottom-center {
+              content: "Page " counter(page) " of " counter(pages);
+              font-family: Georgia, "Times New Roman", serif;
+              font-size: 10pt;
+              color: #666;
+            }
+            @bottom-left {
+              content: "Ambassadors Christian University";
+              font-family: Georgia, "Times New Roman", serif;
+              font-size: 9pt;
+              color: #888;
+            }
+          }
+          @page :first {
+            @bottom-center { content: ""; }
+            @bottom-left { content: ""; }
+          }
+          .program-print {
+            font-size: 11.5pt;
+            line-height: 1.55;
+          }
+          .program-print p,
+          .program-print li {
+            font-size: 11.5pt;
+          }
+          .program-print .print-cover-watermark {
+            display: block;
+          }
+          .program-print .print-cover-logo {
+            display: block;
+          }
+        }
+        .print-cover-watermark { display: none; }
+        .print-cover-logo { display: none; }
+      `}</style>
       {/* Top action bar — hidden on print */}
       <div className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur print:hidden">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-3">
@@ -78,24 +120,34 @@ export default function ProgramPrint() {
       {/* Printable content */}
       <div className="mx-auto max-w-4xl px-6 py-10 print:px-0 print:py-4">
         {/* Cover */}
-        <header className="border-b border-border pb-6 print:break-after-page">
-          <p className="text-xs uppercase tracking-widest text-muted-foreground">Ambassadors Christian University</p>
-          <h1 className="mt-2 font-serif text-4xl leading-tight text-primary">{program.title}</h1>
-          <p className="mt-3 text-sm text-muted-foreground">{program.description}</p>
-          <div className="mt-6 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-            <div>
+        <header className="relative border-b border-border pb-6 print:break-after-page print:min-h-[9in] print:pb-0">
+          {/* Cover logo — only shown on print */}
+          <div className="print-cover-logo mb-8 flex justify-center print:mb-10">
+            <LogoMark size={140} />
+          </div>
+          {/* Watermarked large crest behind the title on print */}
+          <div className="print-cover-watermark pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.06]">
+            <LogoMark size={520} />
+          </div>
+          <div className="relative">
+            <p className="text-center text-xs uppercase tracking-widest text-muted-foreground print:text-[10pt]">Ambassadors Christian University</p>
+            <h1 className="mt-2 text-center font-serif text-4xl leading-tight text-primary print:mt-6 print:text-[32pt]">{program.title}</h1>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted-foreground print:mt-6 print:text-[12pt]">{program.description}</p>
+          </div>
+          <div className="relative mt-6 grid grid-cols-2 gap-4 text-sm print:mt-16 sm:grid-cols-4">
+            <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Level</p>
               <p className="mt-1 font-medium text-foreground">{program.level}</p>
             </div>
-            <div>
+            <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Courses</p>
               <p className="mt-1 font-medium text-foreground">{program.courses.length}</p>
             </div>
-            <div>
+            <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Lessons</p>
               <p className="mt-1 font-medium text-foreground">{totalLessons}</p>
             </div>
-            <div>
+            <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Printed</p>
               <p className="mt-1 font-medium text-foreground">{today}</p>
             </div>
@@ -188,7 +240,7 @@ export default function ProgramPrint() {
           </section>
         ))}
 
-        <footer className="mt-16 border-t border-border pt-6 text-center text-xs text-muted-foreground print:mt-8">
+        <footer className="mt-16 border-t border-border pt-6 text-center text-xs text-muted-foreground print:mt-8 print:hidden">
           <p>© {new Date().getFullYear()} Ambassadors Christian University · Baton Rouge, Louisiana</p>
           <p className="mt-1">Printed on {today} from acu-lms.fly.dev</p>
         </footer>

@@ -67,7 +67,29 @@ export default function LessonPlayer() {
   const video = lesson.type === "video" ? resolveVideo(lesson.contentUrl) : null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background lg:flex-row print:block">
+    <div className="flex min-h-screen flex-col bg-background lg:flex-row print:block lesson-print">
+      <style>{`
+        @media print {
+          @page {
+            size: letter;
+            margin: 0.75in 0.6in 0.85in 0.6in;
+            @bottom-center {
+              content: "Page " counter(page) " of " counter(pages);
+              font-family: Georgia, "Times New Roman", serif;
+              font-size: 10pt;
+              color: #666;
+            }
+            @bottom-left {
+              content: "Ambassadors Christian University";
+              font-family: Georgia, "Times New Roman", serif;
+              font-size: 9pt;
+              color: #888;
+            }
+          }
+          .lesson-print { font-size: 11.5pt; line-height: 1.55; }
+          .lesson-print p, .lesson-print li { font-size: 11.5pt; }
+        }
+      `}</style>
       {/* Sidebar */}
       <aside className="border-b border-border bg-sidebar text-sidebar-foreground lg:w-80 lg:shrink-0 lg:border-b-0 lg:border-r print:hidden">
         <div className="flex items-center gap-2 border-b border-sidebar-border p-4">

@@ -55,7 +55,29 @@ export default function QuizPage() {
 
   return (
     <SiteLayout>
-      <div className="mx-auto max-w-2xl px-4 py-12 sm:px-6 print:max-w-full print:py-4">
+      <style>{`
+        @media print {
+          @page {
+            size: letter;
+            margin: 0.75in 0.6in 0.85in 0.6in;
+            @bottom-center {
+              content: "Page " counter(page) " of " counter(pages);
+              font-family: Georgia, "Times New Roman", serif;
+              font-size: 10pt;
+              color: #666;
+            }
+            @bottom-left {
+              content: "Ambassadors Christian University";
+              font-family: Georgia, "Times New Roman", serif;
+              font-size: 9pt;
+              color: #888;
+            }
+          }
+          .quiz-print-root { font-size: 11.5pt; line-height: 1.55; }
+          .quiz-print-root p, .quiz-print-root li { font-size: 11.5pt; }
+        }
+      `}</style>
+      <div className="quiz-print-root mx-auto max-w-2xl px-4 py-12 sm:px-6 print:max-w-full print:py-4">
         <div className="flex items-start justify-between gap-4 print:block">
           <div>
             <div className="flex items-center gap-2 text-accent-foreground">
