@@ -6,7 +6,7 @@ import type { Express, Request, Response, NextFunction } from "express";
 import { storage } from "./storage";
 import {
   getPayPalConfig, paypalConfigured,
-  createOrder, captureOrder,
+  createOrder, captureOrder, getOrder,
   ensurePlan, createSubscription, getSubscription, cancelSubscription,
   verifyWebhookSignature,
 } from "./paypal";
@@ -393,6 +393,16 @@ export function registerPaymentRoutes(app: Express) {
   });
 
   // ---------- ADMIN: list all plans + transactions ----------
+  // Admin: look up a PayPal order directly from PayPal (source of truth for status)
+  app.get("/api/admin/paypal/order/:orderId", requireAdmin, async (req, res) => {
+    try {
+      const order = await getOrder(req.params.orderId);
+      res.json(order);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message ?? "Failed to fetch order" });
+    }
+  });
+
   app.get("/api/admin/payments/plans", requireAdmin, async (_req, res) => {
     const plans = await storage.listAllPaymentPlans();
     const detailed = await Promise.all(plans.map(async (p) => {

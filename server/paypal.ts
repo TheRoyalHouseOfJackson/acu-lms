@@ -123,6 +123,17 @@ export async function captureOrder(orderId: string): Promise<any> {
   return res.json();
 }
 
+export async function getOrder(orderId: string): Promise<any> {
+  const cfg = await getPayPalConfig();
+  const token = await getAccessToken(cfg);
+  const res = await fetch(`${paypalBaseUrl(cfg.mode)}/v2/checkout/orders/${orderId}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`PayPal getOrder failed: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
 // ---- PRODUCTS AND PLANS (for subscriptions) ----
 // We keep one product per PayPal account, and one PayPal Plan per (programId, planType) combination.
 // Plan IDs are cached in the settings table so we don't re-create them.
