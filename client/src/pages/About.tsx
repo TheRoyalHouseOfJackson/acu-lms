@@ -55,11 +55,12 @@ export default function About() {
         </div>
 
         <div className="mt-14 rounded-xl bg-card p-8 text-center">
-          <p className="font-serif text-3xl text-primary">Dr. Founder</p>
+          <p className="font-serif text-3xl text-primary">Dr. Ernest H. Jackson</p>
           <p className="mt-1 text-sm uppercase tracking-wider text-muted-foreground">President & Founder</p>
           <p className="mx-auto mt-4 max-w-xl text-sm text-foreground/80">
-            Pastor of The City Church of Baton Rouge and lifelong servant of the Gospel, Dr. Founder established
-            Ambassadors Christian University to raise up a generation of equipped, credentialed, Spirit-led leaders.
+            Pastor of The City Church of Baton Rouge and lifelong servant of the Gospel, Dr. Ernest H. Jackson
+            established Ambassadors Christian University to raise up a generation of equipped, credentialed,
+            Spirit-led leaders.
           </p>
         </div>
       </section>

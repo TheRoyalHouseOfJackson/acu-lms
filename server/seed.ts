@@ -86,7 +86,7 @@ export async function seed() {
   const adminEmail = "admin@acu.edu";
   if (!(await storage.getUserByEmail(adminEmail))) {
     const hash = await bcrypt.hash("admin123", 10);
-    await storage.createUser({ email: adminEmail, passwordHash: hash, name: "Dr. Founder", role: "admin" });
+    await storage.createUser({ email: adminEmail, passwordHash: hash, name: "Dr. Ernest H. Jackson", role: "admin" });
     console.log("[seed] Created admin user: admin@acu.edu / admin123");
   }
 

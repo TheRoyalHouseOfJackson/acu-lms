@@ -40,7 +40,7 @@ export default function Certificate() {
 
             <div className="mt-12 flex items-end justify-between gap-8">
               <div className="flex-1 text-center">
-                <p className="border-t border-foreground/40 pt-2 font-serif text-lg text-foreground">Dr. Founder</p>
+                <p className="border-t border-foreground/40 pt-2 font-serif text-lg text-foreground">Dr. Ernest H. Jackson</p>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">President</p>
               </div>
               <div className="flex-1 text-center">

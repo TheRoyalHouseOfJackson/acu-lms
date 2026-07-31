@@ -16,7 +16,7 @@ Built with **Express + React + Vite + Tailwind CSS + shadcn/ui + Drizzle ORM (SQ
 | -------- | ----------------- |
 | Email    | `admin@acu.edu`   |
 | Password | `admin123`        |
-| Name     | Dr. Founder       |
+| Name     | Dr. Ernest H. Jackson |
 | Role     | admin (President) |
 
 > **Change this password in production.** Log in, then update the admin account.

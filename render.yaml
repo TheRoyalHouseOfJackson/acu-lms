@@ -25,7 +25,7 @@ services:
       - key: ADMIN_PASSWORD
         sync: false
       - key: ADMIN_NAME
-        value: Dr. Founder
+        value: Dr. Ernest H. Jackson
     disk:
       name: acu-lms-data
       mountPath: /var/data
