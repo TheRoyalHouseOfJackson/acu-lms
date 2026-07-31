@@ -175,8 +175,10 @@ function hasColumn(table: string, col: string): boolean {
   const rows = sqlite.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
   return rows.some((r) => r.name === col);
 }
-if (!hasColumn("courses", "credit_hours")) {
-  sqlite.exec(`ALTER TABLE courses ADD COLUMN credit_hours INTEGER NOT NULL DEFAULT 3;`);
+// Adds column with default 0 so we can detect "unbackfilled" rows.
+const neededCreditHoursBackfill = !hasColumn("courses", "credit_hours");
+if (neededCreditHoursBackfill) {
+  sqlite.exec(`ALTER TABLE courses ADD COLUMN credit_hours INTEGER NOT NULL DEFAULT 0;`);
 }
 if (!hasColumn("courses", "course_code")) {
   sqlite.exec(`ALTER TABLE courses ADD COLUMN course_code TEXT NOT NULL DEFAULT '';`);
@@ -195,8 +197,25 @@ try {
   console.error("app-fee migration warning:", err);
 }
 
-// Backfill credit hours per level. Idempotent: only touches rows where credit_hours = 0.
-// Bachelor's / Master's / Dual = 3 credits per course; Doctoral = 4.
+// One-time correction: previous migration used DEFAULT 3, which incorrectly
+// applied to Doctoral courses (should be 4). Use a marker table to run this
+// fix exactly once.
+try {
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS _migrations (id TEXT PRIMARY KEY);`);
+  const marker = sqlite.prepare(`SELECT id FROM _migrations WHERE id = 'doctoral_credit_hours_v1'`).get();
+  if (!marker) {
+    console.log("Running doctoral_credit_hours_v1 migration...");
+    sqlite.exec(`
+      UPDATE courses SET credit_hours = 4
+        WHERE program_id IN (SELECT id FROM programs WHERE level = 'Doctoral');
+      INSERT INTO _migrations (id) VALUES ('doctoral_credit_hours_v1');
+    `);
+  }
+} catch (err) {
+  console.error("doctoral credit-hours migration warning:", err);
+}
+
+// Idempotent backfill for any future rows added with credit_hours=0.
 try {
   sqlite.exec(`
     UPDATE courses SET credit_hours = 3
