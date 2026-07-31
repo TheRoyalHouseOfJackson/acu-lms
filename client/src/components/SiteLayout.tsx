@@ -138,11 +138,13 @@ export function Footer() {
         </div>
         <div>
           <h4 className="mb-3 text-sm font-semibold uppercase tracking-wider text-accent">Contact</h4>
-          <p className="text-sm text-sidebar-foreground/80">
-            Baton Rouge, Louisiana<br />
-            info@acu.edu<br />
-            (225) 555-0100
-          </p>
+          <address className="not-italic text-sm text-sidebar-foreground/80">
+            Ambassadors Christian University<br />
+            1771 Woodale Blvd, 3rd Floor Suite H<br />
+            Baton Rouge, LA 70806<br />
+            <a href="mailto:info@ambassadorscu.org" className="hover:text-accent" data-testid="footer-email">info@ambassadorscu.org</a><br />
+            <a href="tel:+12253715476" className="hover:text-accent" data-testid="footer-phone">225-371-5476</a>
+          </address>
         </div>
       </div>
       <div className="border-t border-sidebar-border py-4 text-center text-xs text-sidebar-foreground/60">
