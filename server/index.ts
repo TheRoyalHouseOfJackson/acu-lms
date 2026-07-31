@@ -24,10 +24,12 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
-// Redirect the legacy Fly hostname to the primary domain.
+// Redirect the legacy Fly hostname to the primary domain for user-facing
+// pages only. API paths keep responding on both hosts so third parties
+// (e.g. PayPal webhooks, direct API clients) don't break during the switch.
 app.use((req, res, next) => {
   const host = (req.headers["x-forwarded-host"] as string) || req.get("host") || "";
-  if (host === "acu-lms.fly.dev") {
+  if (host === "acu-lms.fly.dev" && !req.originalUrl.startsWith("/api/")) {
     return res.redirect(301, `https://ambassadorscu.org${req.originalUrl}`);
   }
   next();
