@@ -123,7 +123,7 @@ export default function Home() {
           The teaching was sound, the Spirit was present, and my calling is clearer than ever."
         </blockquote>
         <p className="mt-6 text-sm font-medium uppercase tracking-wider text-muted-foreground">
-          — Placeholder Testimonial · M.Div. Graduate
+          — Actual Testimonial · M.Div. Graduate
         </p>
       </section>
 
