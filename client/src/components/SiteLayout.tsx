@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { Menu, X, LogOut, LayoutDashboard, Shield, Receipt } from "lucide-react";
+import { Menu, X, LogOut, LayoutDashboard, Shield, Receipt, UserCog } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
@@ -59,6 +59,9 @@ export function Navbar() {
                 <DropdownMenuItem onClick={() => navigate("/billing")} data-testid="menu-billing">
                   <Receipt className="mr-2 h-4 w-4" /> Billing
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/account")} data-testid="menu-account">
+                  <UserCog className="mr-2 h-4 w-4" /> Account Settings
+                </DropdownMenuItem>
                 {user.role === "admin" && (
                   <DropdownMenuItem onClick={() => navigate("/admin")} data-testid="menu-admin">
                     <Shield className="mr-2 h-4 w-4" /> Admin
@@ -96,6 +99,7 @@ export function Navbar() {
             {user ? (
               <>
                 <Link href="/dashboard"><Button variant="outline" className="w-full" onClick={() => setOpen(false)}>Dashboard</Button></Link>
+                <Link href="/account"><Button variant="outline" className="w-full" onClick={() => setOpen(false)}>Account Settings</Button></Link>
                 {user.role === "admin" && <Link href="/admin"><Button variant="outline" className="w-full" onClick={() => setOpen(false)}>Admin</Button></Link>}
                 <Button variant="ghost" className="w-full" onClick={async () => { await logout(); setOpen(false); }}>Log out</Button>
               </>

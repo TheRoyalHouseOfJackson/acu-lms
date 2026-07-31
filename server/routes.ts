@@ -128,6 +128,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.json(publicUser(user));
   });
 
+  app.post("/api/auth/change-password", async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ message: "Not authenticated" });
+    const body = req.body as { currentPassword?: string; newPassword?: string };
+    const currentPassword = typeof body.currentPassword === "string" ? body.currentPassword : "";
+    const newPassword = typeof body.newPassword === "string" ? body.newPassword : "";
+    if (newPassword.length < 8) {
+      return res.status(400).json({ message: "New password must be at least 8 characters." });
+    }
+    if (currentPassword === newPassword) {
+      return res.status(400).json({ message: "New password must differ from current password." });
+    }
+    const user = await storage.getUser(req.session.userId);
+    if (!user) return res.status(401).json({ message: "Not authenticated" });
+    const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!ok) return res.status(401).json({ message: "Current password is incorrect." });
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await storage.updateUserPassword(user.id, newHash);
+    res.json({ ok: true });
+  });
+
   // ---------- PROGRAMS ----------
   app.get("/api/programs", async (_req, res) => {
     res.json(await storage.listPrograms());

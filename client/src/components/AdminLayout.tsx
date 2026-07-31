@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { LayoutDashboard, BookOpen, Users, LogOut, ExternalLink, CreditCard, Receipt, Award, FileText } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, LogOut, ExternalLink, CreditCard, Receipt, Award, FileText, UserCog } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -47,6 +47,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="space-y-1 border-t border-sidebar-border p-3">
+          <Link href="/account"><a className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent/50" data-testid="admin-account"><UserCog className="h-4 w-4" /> Account Settings</a></Link>
           <Link href="/"><a className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent/50" data-testid="admin-view-site"><ExternalLink className="h-4 w-4" /> View Site</a></Link>
           <button onClick={async () => { await logout(); navigate("/"); }} className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent/50" data-testid="admin-logout">
             <LogOut className="h-4 w-4" /> Log out
