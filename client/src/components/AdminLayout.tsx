@@ -3,12 +3,13 @@ import { Link, useLocation } from "wouter";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth";
-import { LayoutDashboard, BookOpen, Users, LogOut, ExternalLink, CreditCard, Receipt, Award } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, LogOut, ExternalLink, CreditCard, Receipt, Award, FileText } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/programs", label: "Programs", icon: BookOpen },
   { href: "/admin/students", label: "Students", icon: Users },
+  { href: "/admin/transcripts", label: "Transcripts", icon: FileText },
   { href: "/admin/scholarships", label: "Scholarships", icon: Award },
   { href: "/admin/payments", label: "Payments", icon: Receipt },
   { href: "/admin/paypal", label: "PayPal Setup", icon: CreditCard },

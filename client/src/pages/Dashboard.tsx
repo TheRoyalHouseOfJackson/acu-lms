@@ -1,15 +1,32 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { SiteLayout } from "@/components/SiteLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { useAuth } from "@/lib/auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import type { EnrollmentDetail } from "@/lib/types";
 import { levelLabel } from "@/lib/types";
-import { PlayCircle, Award, BookOpen, GraduationCap } from "lucide-react";
+import { PlayCircle, Award, BookOpen, GraduationCap, FileText, Download, Clock, CheckCircle2 } from "lucide-react";
+
+type TranscriptRequestRow = {
+  id: number;
+  requestedAt: number;
+  status: "pending" | "issued" | "denied";
+  purpose: string | null;
+  deliveryEmail: string | null;
+  publicId: string | null;
+  issuedAt: number | null;
+  note: string | null;
+};
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
@@ -22,6 +39,37 @@ export default function Dashboard() {
   const { data: enrollments, isLoading } = useQuery<EnrollmentDetail[]>({
     queryKey: ["/api/enrollments/me"],
     enabled: !!user,
+  });
+
+  const { data: transcriptRequests } = useQuery<TranscriptRequestRow[]>({
+    queryKey: ["/api/transcripts/me"],
+    enabled: !!user,
+  });
+
+  const [transcriptDialogOpen, setTranscriptDialogOpen] = useState(false);
+  const [purpose, setPurpose] = useState("");
+  const [deliveryEmail, setDeliveryEmail] = useState("");
+  const { toast } = useToast();
+
+  const requestTranscript = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/transcripts/request", {
+        purpose: purpose.trim() || null,
+        deliveryEmail: deliveryEmail.trim() || null,
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Request submitted", description: "The registrar will review your transcript request." });
+      setTranscriptDialogOpen(false);
+      setPurpose("");
+      setDeliveryEmail("");
+      queryClient.invalidateQueries({ queryKey: ["/api/transcripts/me"] });
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "Please try again.";
+      toast({ title: "Request failed", description: msg, variant: "destructive" });
+    },
   });
 
   if (!user) return <SiteLayout><div className="mx-auto max-w-5xl px-4 py-24 text-center text-muted-foreground">Redirecting to login…</div></SiteLayout>;
@@ -94,6 +142,101 @@ export default function Dashboard() {
               </Card>
             ))}
           </div>
+        )}
+
+        {/* Transcripts */}
+        <div className="mb-4 mt-12 flex items-center justify-between">
+          <h2 className="font-serif text-2xl text-primary">Official Transcripts</h2>
+          <Dialog open={transcriptDialogOpen} onOpenChange={setTranscriptDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline" data-testid="button-request-transcript">
+                <FileText className="mr-2 h-4 w-4" /> Request Transcript
+              </Button>
+            </DialogTrigger>
+            <DialogContent data-testid="dialog-transcript-request">
+              <DialogHeader>
+                <DialogTitle>Request an Official Transcript</DialogTitle>
+                <DialogDescription>
+                  The registrar will review your request and, once approved, generate an official signed PDF transcript.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="purpose">Purpose (optional)</Label>
+                  <Textarea
+                    id="purpose"
+                    placeholder="e.g., Graduate school application, employer verification"
+                    value={purpose}
+                    onChange={(e) => setPurpose(e.target.value)}
+                    data-testid="input-purpose"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="delivery-email">Deliver to email (optional)</Label>
+                  <Input
+                    id="delivery-email"
+                    type="email"
+                    placeholder={user.email}
+                    value={deliveryEmail}
+                    onChange={(e) => setDeliveryEmail(e.target.value)}
+                    data-testid="input-delivery-email"
+                  />
+                  <p className="text-xs text-muted-foreground">Leave blank to deliver to your account email.</p>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setTranscriptDialogOpen(false)}>Cancel</Button>
+                <Button
+                  onClick={() => requestTranscript.mutate()}
+                  disabled={requestTranscript.isPending}
+                  data-testid="button-submit-transcript-request"
+                >
+                  {requestTranscript.isPending ? "Submitting…" : "Submit Request"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+        {transcriptRequests && transcriptRequests.length > 0 ? (
+          <div className="space-y-3">
+            {transcriptRequests.map((r) => (
+              <Card key={r.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between" data-testid={`transcript-row-${r.id}`}>
+                <div className="flex items-start gap-3">
+                  {r.status === "issued" ? (
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-primary" />
+                  ) : r.status === "denied" ? (
+                    <FileText className="mt-0.5 h-5 w-5 text-destructive" />
+                  ) : (
+                    <Clock className="mt-0.5 h-5 w-5 text-muted-foreground" />
+                  )}
+                  <div>
+                    <p className="text-sm font-medium">
+                      {r.status === "issued" ? "Transcript Issued" : r.status === "denied" ? "Request Denied" : "Request Pending"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Requested {new Date(r.requestedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
+                      {r.issuedAt && (
+                        <> · Issued {new Date(r.issuedAt).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}</>
+                      )}
+                    </p>
+                    {r.purpose && <p className="mt-1 text-xs text-muted-foreground">Purpose: {r.purpose}</p>}
+                    {r.note && <p className="mt-1 text-xs italic text-muted-foreground">Note: {r.note}</p>}
+                  </div>
+                </div>
+                {r.status === "issued" && r.publicId && (
+                  <a href={`/api/admin/transcripts/${r.publicId}/pdf`} target="_blank" rel="noreferrer">
+                    <Button size="sm" data-testid={`button-download-transcript-${r.id}`}>
+                      <Download className="mr-2 h-4 w-4" /> Download PDF
+                    </Button>
+                  </a>
+                )}
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card className="p-6 text-sm text-muted-foreground">
+            No transcript requests yet. Use the button above to request an official copy for graduate school, employer verification, or your own records.
+          </Card>
         )}
 
         {/* Certificates */}

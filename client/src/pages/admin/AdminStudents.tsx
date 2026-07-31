@@ -1,9 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import { Users, FileText } from "lucide-react";
 
 type Student = {
   id: number; name: string; email: string;
@@ -11,7 +14,24 @@ type Student = {
 };
 
 export default function AdminStudents() {
+  const { toast } = useToast();
   const { data: students, isLoading } = useQuery<Student[]>({ queryKey: ["/api/admin/students"] });
+
+  const generateMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const res = await apiRequest("POST", "/api/admin/transcripts/generate", { userId });
+      return res.json();
+    },
+    onSuccess: (data: { publicId: string }) => {
+      toast({ title: "Transcript issued", description: "Opening PDF in a new tab." });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/transcripts"] });
+      window.open(`/api/admin/transcripts/${data.publicId}/pdf`, "_blank");
+    },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : "Please try again.";
+      toast({ title: "Generation failed", description: msg, variant: "destructive" });
+    },
+  });
 
   return (
     <AdminLayout>
@@ -26,12 +46,22 @@ export default function AdminStudents() {
             </Card>
           ) : students?.map((s) => (
             <Card key={s.id} className="p-5" data-testid={`student-${s.id}`}>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium text-foreground">{s.name}</p>
                   <p className="text-sm text-muted-foreground">{s.email}</p>
+                  <span className="text-xs text-muted-foreground">{s.enrollments.length} enrollment{s.enrollments.length !== 1 ? "s" : ""}</span>
                 </div>
-                <span className="text-xs text-muted-foreground">{s.enrollments.length} enrollment{s.enrollments.length !== 1 ? "s" : ""}</span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => generateMutation.mutate(s.id)}
+                  disabled={generateMutation.isPending || s.enrollments.length === 0}
+                  data-testid={`button-generate-transcript-${s.id}`}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  {generateMutation.isPending ? "Generating…" : "Generate Transcript"}
+                </Button>
               </div>
               {s.enrollments.length > 0 && (
                 <div className="mt-4 space-y-3 border-t border-border pt-3">

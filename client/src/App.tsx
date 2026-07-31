@@ -34,6 +34,7 @@ import AdminCourse from "@/pages/admin/AdminCourse";
 import AdminLesson from "@/pages/admin/AdminLesson";
 import AdminStudents from "@/pages/admin/AdminStudents";
 import AdminQuiz from "@/pages/admin/AdminQuiz";
+import AdminTranscripts from "@/pages/admin/AdminTranscripts";
 
 function AppRouter() {
   return (
@@ -62,6 +63,7 @@ function AppRouter() {
       <Route path="/admin/courses/:id" component={AdminCourse} />
       <Route path="/admin/lessons/:id" component={AdminLesson} />
       <Route path="/admin/students" component={AdminStudents} />
+      <Route path="/admin/transcripts" component={AdminTranscripts} />
       <Route path="/admin/quizzes/:id" component={AdminQuiz} />
       <Route path="/admin/paypal" component={AdminPayPal} />
       <Route path="/admin/payments" component={AdminPayments} />
