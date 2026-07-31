@@ -12,6 +12,7 @@ import { storage } from "./storage";
 import { seed } from "./seed";
 import { signupSchema, loginSchema } from "@shared/schema";
 import { registerPaymentRoutes, enrollmentHasAccess } from "./paymentRoutes";
+import { buildTranscript, renderTranscriptPDF } from "./transcript";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -376,6 +377,182 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const programs = await storage.listPrograms();
     const students = await storage.listStudents();
     res.json({ programs: programs.length, students: students.length });
+  });
+
+  // ---------- TRANSCRIPTS ----------
+
+  // Student: submit a request for an official transcript.
+  app.post("/api/transcripts/request", requireAuth, async (req, res) => {
+    const userId = req.session.userId!;
+    const purpose = String(req.body?.purpose ?? "").slice(0, 500);
+    const deliveryEmail = String(req.body?.deliveryEmail ?? "").slice(0, 200);
+    const request = await storage.createTranscriptRequest({
+      userId,
+      purpose,
+      deliveryEmail,
+      note: "",
+    });
+    res.json(request);
+  });
+
+  // Student: list my transcript requests.
+  app.get("/api/transcripts/me", requireAuth, async (req, res) => {
+    const requests = await storage.listTranscriptRequestsByUser(req.session.userId!);
+    res.json(requests);
+  });
+
+  // Student: preview my current transcript data (JSON, no PDF).
+  app.get("/api/transcripts/me/preview", requireAuth, async (req, res) => {
+    const data = await buildTranscript(req.session.userId!);
+    res.json(data);
+  });
+
+  // Public verification endpoint — returns basic metadata for an issued transcript.
+  app.get("/api/transcripts/verify/:publicId", async (req, res) => {
+    const request = await storage.getTranscriptRequestByPublicId(req.params.publicId);
+    if (!request || request.status !== "issued") {
+      return res.status(404).json({ message: "Transcript not found" });
+    }
+    const user = await storage.getUser(request.userId);
+    const profile = await storage.getStudentProfile(request.userId);
+    res.json({
+      publicId: request.publicId,
+      issuedAt: request.issuedAt,
+      studentName: profile?.legalName || user?.name || "Student",
+      studentIdNumber: profile?.studentIdNumber || "",
+    });
+  });
+
+  // Admin: list all transcript requests (with student info attached).
+  app.get("/api/admin/transcripts", requireAdmin, async (_req, res) => {
+    const requests = await storage.listTranscriptRequests();
+    const detailed = await Promise.all(requests.map(async (r) => {
+      const user = await storage.getUser(r.userId);
+      return {
+        ...r,
+        studentName: user?.name ?? "Unknown",
+        studentEmail: user?.email ?? "",
+      };
+    }));
+    res.json(detailed);
+  });
+
+  // Admin: update note / status on a transcript request without issuing.
+  app.patch("/api/admin/transcripts/:id", requireAdmin, async (req, res) => {
+    const id = Number(req.params.id);
+    const patch: Record<string, unknown> = {};
+    if (typeof req.body?.status === "string") patch.status = req.body.status;
+    if (typeof req.body?.note === "string") patch.note = req.body.note;
+    const updated = await storage.updateTranscriptRequest(id, patch as any);
+    if (!updated) return res.status(404).json({ message: "Request not found" });
+    res.json(updated);
+  });
+
+  // Admin: generate an official transcript PDF for a user, mark request issued (if any).
+  //   POST /api/admin/transcripts/generate  { userId, requestId? }
+  //   Returns { publicId, downloadUrl } after saving the PDF to /data/transcripts/<publicId>.pdf.
+  app.post("/api/admin/transcripts/generate", requireAdmin, async (req, res) => {
+    try {
+      const userId = Number(req.body?.userId);
+      if (!userId) return res.status(400).json({ message: "userId required" });
+      const requestId = req.body?.requestId ? Number(req.body.requestId) : null;
+
+      const user = await storage.getUser(userId);
+      if (!user) return res.status(404).json({ message: "User not found" });
+
+      // Ensure profile exists so future transcripts share the same student ID number.
+      const existingProfile = await storage.getStudentProfile(userId);
+      if (!existingProfile) {
+        const year = new Date(user.createdAt).getFullYear();
+        const studentIdNumber = `ACU-${year}-${String(userId).padStart(4, "0")}`;
+        await storage.upsertStudentProfile(userId, {
+          studentIdNumber,
+          legalName: user.name,
+          dateOfBirth: "",
+        });
+      }
+
+      // Compute origin for the verification URL (fall back to Fly host in prod).
+      const proto = (req.headers["x-forwarded-proto"] as string) || (req.protocol || "https");
+      const host = (req.headers["x-forwarded-host"] as string) || req.get("host") || "acu-lms.fly.dev";
+      const verifyBaseUrl = `${proto}://${host}`;
+
+      const data = await buildTranscript(userId, { verifyBaseUrl });
+
+      // Write PDF to persistent data volume.
+      const dataDir = process.env.DATA_DIR || "/data";
+      const outDir = path.join(dataDir, "transcripts");
+      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+      const filePath = path.join(outDir, `${data.publicId}.pdf`);
+      const stream = fs.createWriteStream(filePath);
+      await renderTranscriptPDF(data, stream);
+
+      // Record issuance against the request row (create-and-issue path if none supplied).
+      let requestRow;
+      if (requestId) {
+        requestRow = await storage.updateTranscriptRequest(requestId, {
+          status: "issued",
+          publicId: data.publicId,
+          issuedAt: data.issuedAt,
+          issuedBy: req.session.userId!,
+        });
+      } else {
+        const created = await storage.createTranscriptRequest({
+          userId,
+          purpose: "Admin-generated",
+          deliveryEmail: "",
+          note: "",
+        });
+        requestRow = await storage.updateTranscriptRequest(created.id, {
+          status: "issued",
+          publicId: data.publicId,
+          issuedAt: data.issuedAt,
+          issuedBy: req.session.userId!,
+        });
+      }
+
+      res.json({
+        publicId: data.publicId,
+        downloadUrl: `/api/admin/transcripts/${data.publicId}/pdf`,
+        request: requestRow,
+      });
+    } catch (err) {
+      console.error("transcript generation failed:", err);
+      res.status(500).json({ message: "Failed to generate transcript", error: String(err) });
+    }
+  });
+
+  // Serve a generated transcript PDF (admin, or the student who owns it).
+  app.get("/api/admin/transcripts/:publicId/pdf", requireAuth, async (req, res) => {
+    const requestRow = await storage.getTranscriptRequestByPublicId(String(req.params.publicId));
+    if (!requestRow || requestRow.status !== "issued") return res.status(404).json({ message: "Not found" });
+    // Admin sees all; students may only download their own.
+    if (req.session.role !== "admin" && requestRow.userId !== req.session.userId) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    const dataDir = process.env.DATA_DIR || "/data";
+    const filePath = path.join(dataDir, "transcripts", `${requestRow.publicId}.pdf`);
+    if (!fs.existsSync(filePath)) return res.status(404).json({ message: "PDF missing on disk" });
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="acu-transcript-${requestRow.publicId}.pdf"`);
+    fs.createReadStream(filePath).pipe(res);
+  });
+
+  // Admin: update student legal name / DOB / student ID for the transcript header.
+  app.patch("/api/admin/students/:userId/profile", requireAdmin, async (req, res) => {
+    const userId = Number(req.params.userId);
+    const patch: Record<string, string> = {};
+    if (typeof req.body?.legalName === "string") patch.legalName = req.body.legalName;
+    if (typeof req.body?.dateOfBirth === "string") patch.dateOfBirth = req.body.dateOfBirth;
+    if (typeof req.body?.studentIdNumber === "string") patch.studentIdNumber = req.body.studentIdNumber;
+    const profile = await storage.upsertStudentProfile(userId, patch);
+    res.json(profile);
+  });
+
+  app.get("/api/admin/students/:userId/profile", requireAdmin, async (req, res) => {
+    const userId = Number(req.params.userId);
+    const profile = await storage.getStudentProfile(userId);
+    res.json(profile ?? null);
   });
 
   // Register payment routes (PayPal + subscription management)

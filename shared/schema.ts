@@ -42,6 +42,8 @@ export const courses = sqliteTable("courses", {
   title: text("title").notNull(),
   description: text("description").notNull().default(""),
   position: integer("position").notNull().default(0),
+  creditHours: integer("credit_hours").notNull().default(3), // US Carnegie Unit credit hours
+  courseCode: text("course_code").notNull().default(""),    // e.g. THEO-101, generated if empty
 });
 export const insertCourseSchema = createInsertSchema(courses).omit({ id: true });
 export type InsertCourse = z.infer<typeof insertCourseSchema>;
@@ -204,3 +206,27 @@ export const scholarships = sqliteTable("scholarships", {
   createdBy: integer("created_by").notNull().default(0), // admin user id
 });
 export type Scholarship = typeof scholarships.$inferSelect;
+
+// TRANSCRIPT REQUESTS — student requests, admin fulfills
+export const transcriptRequests = sqliteTable("transcript_requests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  userId: integer("user_id").notNull(),
+  requestedAt: integer("requested_at").notNull(),
+  status: text("status").notNull().default("pending"), // pending | issued | denied
+  purpose: text("purpose").notNull().default(""),       // student-provided reason
+  deliveryEmail: text("delivery_email").notNull().default(""),
+  publicId: text("public_id").notNull().default(""),    // for URL to download issued transcript
+  issuedAt: integer("issued_at").notNull().default(0),
+  issuedBy: integer("issued_by").notNull().default(0),  // admin user id
+  note: text("note").notNull().default(""),
+});
+export type TranscriptRequest = typeof transcriptRequests.$inferSelect;
+
+// STUDENT PROFILE — extra fields needed on a transcript that aren't on the users table
+export const studentProfiles = sqliteTable("student_profiles", {
+  userId: integer("user_id").primaryKey(),
+  studentIdNumber: text("student_id_number").notNull().default(""), // ACU-2026-0001
+  legalName: text("legal_name").notNull().default(""),               // if different from users.name
+  dateOfBirth: text("date_of_birth").notNull().default(""),          // YYYY-MM-DD, optional
+});
+export type StudentProfile = typeof studentProfiles.$inferSelect;

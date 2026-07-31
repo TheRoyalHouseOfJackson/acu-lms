@@ -2,12 +2,14 @@ import {
   users, programs, courses, lessons, enrollments, lessonProgress,
   quizzes, quizQuestions, quizAttempts, certificates,
   settings, paymentPlans, paymentTransactions, scholarships,
+  transcriptRequests, studentProfiles,
 } from "@shared/schema";
 import type {
   User, InsertUser, Program, InsertProgram, Course, InsertCourse,
   Lesson, InsertLesson, Enrollment, LessonProgress, Quiz, InsertQuiz,
   QuizQuestion, InsertQuizQuestion, QuizAttempt, Certificate,
   Setting, PaymentPlan, PaymentTransaction, Scholarship,
+  TranscriptRequest, StudentProfile,
 } from "@shared/schema";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
@@ -42,7 +44,9 @@ CREATE TABLE IF NOT EXISTS courses (
   program_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   description TEXT NOT NULL DEFAULT '',
-  position INTEGER NOT NULL DEFAULT 0
+  position INTEGER NOT NULL DEFAULT 0,
+  credit_hours INTEGER NOT NULL DEFAULT 3,
+  course_code TEXT NOT NULL DEFAULT ''
 );
 CREATE TABLE IF NOT EXISTS lessons (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,7 +150,37 @@ CREATE TABLE IF NOT EXISTS scholarships (
   created_at INTEGER NOT NULL,
   created_by INTEGER NOT NULL DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS transcript_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  requested_at INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  purpose TEXT NOT NULL DEFAULT '',
+  delivery_email TEXT NOT NULL DEFAULT '',
+  public_id TEXT NOT NULL DEFAULT '',
+  issued_at INTEGER NOT NULL DEFAULT 0,
+  issued_by INTEGER NOT NULL DEFAULT 0,
+  note TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS student_profiles (
+  user_id INTEGER PRIMARY KEY,
+  student_id_number TEXT NOT NULL DEFAULT '',
+  legal_name TEXT NOT NULL DEFAULT '',
+  date_of_birth TEXT NOT NULL DEFAULT ''
+);
 `);
+
+// Idempotent ALTER migrations for pre-existing courses table (adds credit_hours + course_code)
+function hasColumn(table: string, col: string): boolean {
+  const rows = sqlite.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return rows.some((r) => r.name === col);
+}
+if (!hasColumn("courses", "credit_hours")) {
+  sqlite.exec(`ALTER TABLE courses ADD COLUMN credit_hours INTEGER NOT NULL DEFAULT 3;`);
+}
+if (!hasColumn("courses", "course_code")) {
+  sqlite.exec(`ALTER TABLE courses ADD COLUMN course_code TEXT NOT NULL DEFAULT '';`);
+}
 
 // One-time migration: enforce official application fees per degree level.
 // Idempotent — safe to run on every boot.
@@ -159,6 +193,58 @@ try {
   `);
 } catch (err) {
   console.error("app-fee migration warning:", err);
+}
+
+// Backfill credit hours per level. Idempotent: only touches rows where credit_hours = 0.
+// Bachelor's / Master's / Dual = 3 credits per course; Doctoral = 4.
+try {
+  sqlite.exec(`
+    UPDATE courses SET credit_hours = 3
+      WHERE credit_hours = 0 AND program_id IN (SELECT id FROM programs WHERE level = 'Bachelor''s');
+    UPDATE courses SET credit_hours = 3
+      WHERE credit_hours = 0 AND program_id IN (SELECT id FROM programs WHERE level = 'Master''s');
+    UPDATE courses SET credit_hours = 4
+      WHERE credit_hours = 0 AND program_id IN (SELECT id FROM programs WHERE level = 'Doctoral');
+    UPDATE courses SET credit_hours = 3
+      WHERE credit_hours = 0 AND program_id IN (SELECT id FROM programs WHERE level = 'Dual');
+  `);
+} catch (err) {
+  console.error("credit-hours backfill warning:", err);
+}
+
+// Backfill course codes. Idempotent: only sets codes where empty.
+// Format: ACU-<PROG>-<POS>  (e.g., ACU-BAMC-101 for Bachelor of Arts in Ministry Chaplaincy, position 1)
+try {
+  const rows = sqlite.prepare(`
+    SELECT c.id, c.position, p.title AS ptitle, p.level
+    FROM courses c
+    JOIN programs p ON p.id = c.program_id
+    WHERE c.course_code = ''
+  `).all() as { id: number; position: number; ptitle: string; level: string }[];
+
+  const abbreviate = (t: string) =>
+    t.replace(/[^A-Za-z ]/g, "").split(/\s+/).map((w) => w[0] || "").join("").toUpperCase().slice(0, 6) || "GEN";
+
+  const levelDigit = (lv: string): string => {
+    if (lv === "Bachelor's") return "1";
+    if (lv === "Master's") return "5";
+    if (lv === "Doctoral") return "8";
+    if (lv === "Dual") return "3";
+    return "1";
+  };
+
+  const upd = sqlite.prepare("UPDATE courses SET course_code = ? WHERE id = ?");
+  const seenPerProg = new Map<string, number>();
+  for (const r of rows) {
+    const key = r.ptitle;
+    const abbr = abbreviate(r.ptitle);
+    const seq = (seenPerProg.get(key) ?? 0) + 1;
+    seenPerProg.set(key, seq);
+    const code = `ACU-${abbr}-${levelDigit(r.level)}${String(seq).padStart(2, "0")}`;
+    upd.run(code, r.id);
+  }
+} catch (err) {
+  console.error("course-code backfill warning:", err);
 }
 
 export interface IStorage {
@@ -236,6 +322,16 @@ export interface IStorage {
   deleteScholarship(id: number): Promise<void>;
   listScholarshipsByUser(userId: number): Promise<Scholarship[]>;
   listAllScholarships(): Promise<Scholarship[]>;
+  // transcript requests
+  createTranscriptRequest(r: Omit<TranscriptRequest, "id" | "requestedAt" | "issuedAt" | "issuedBy" | "publicId" | "status">): Promise<TranscriptRequest>;
+  getTranscriptRequest(id: number): Promise<TranscriptRequest | undefined>;
+  getTranscriptRequestByPublicId(publicId: string): Promise<TranscriptRequest | undefined>;
+  updateTranscriptRequest(id: number, patch: Partial<TranscriptRequest>): Promise<TranscriptRequest | undefined>;
+  listTranscriptRequests(): Promise<TranscriptRequest[]>;
+  listTranscriptRequestsByUser(userId: number): Promise<TranscriptRequest[]>;
+  // student profiles
+  getStudentProfile(userId: number): Promise<StudentProfile | undefined>;
+  upsertStudentProfile(userId: number, patch: Partial<Omit<StudentProfile, "userId">>): Promise<StudentProfile>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -417,6 +513,50 @@ export class DatabaseStorage implements IStorage {
   }
   async listAllScholarships(): Promise<Scholarship[]> {
     return db.select().from(scholarships).orderBy(asc(scholarships.createdAt)).all();
+  }
+
+  // ---------- TRANSCRIPT REQUESTS ----------
+  async createTranscriptRequest(r: Omit<TranscriptRequest, "id" | "requestedAt" | "issuedAt" | "issuedBy" | "publicId" | "status">): Promise<TranscriptRequest> {
+    return db.insert(transcriptRequests).values({
+      ...r,
+      requestedAt: Date.now(),
+      status: "pending",
+      publicId: "",
+      issuedAt: 0,
+      issuedBy: 0,
+    }).returning().get();
+  }
+  async getTranscriptRequest(id: number) {
+    return db.select().from(transcriptRequests).where(eq(transcriptRequests.id, id)).get();
+  }
+  async getTranscriptRequestByPublicId(publicId: string) {
+    return db.select().from(transcriptRequests).where(eq(transcriptRequests.publicId, publicId)).get();
+  }
+  async updateTranscriptRequest(id: number, patch: Partial<TranscriptRequest>) {
+    return db.update(transcriptRequests).set(patch).where(eq(transcriptRequests.id, id)).returning().get();
+  }
+  async listTranscriptRequests() {
+    return db.select().from(transcriptRequests).orderBy(asc(transcriptRequests.requestedAt)).all();
+  }
+  async listTranscriptRequestsByUser(userId: number) {
+    return db.select().from(transcriptRequests).where(eq(transcriptRequests.userId, userId)).orderBy(asc(transcriptRequests.requestedAt)).all();
+  }
+
+  // ---------- STUDENT PROFILES ----------
+  async getStudentProfile(userId: number) {
+    return db.select().from(studentProfiles).where(eq(studentProfiles.userId, userId)).get();
+  }
+  async upsertStudentProfile(userId: number, patch: Partial<Omit<StudentProfile, "userId">>): Promise<StudentProfile> {
+    const existing = await this.getStudentProfile(userId);
+    if (existing) {
+      return db.update(studentProfiles).set(patch).where(eq(studentProfiles.userId, userId)).returning().get();
+    }
+    return db.insert(studentProfiles).values({
+      userId,
+      studentIdNumber: patch.studentIdNumber ?? "",
+      legalName: patch.legalName ?? "",
+      dateOfBirth: patch.dateOfBirth ?? "",
+    }).returning().get();
   }
 }
 
