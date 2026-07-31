@@ -242,7 +242,7 @@ export default function ProgramPrint() {
 
         <footer className="mt-16 border-t border-border pt-6 text-center text-xs text-muted-foreground print:mt-8 print:hidden">
           <p>© {new Date().getFullYear()} Ambassadors Christian University · Baton Rouge, Louisiana</p>
-          <p className="mt-1">Printed on {today} from acu-lms.fly.dev</p>
+          <p className="mt-1">Printed on {today} from ambassadorscu.org</p>
         </footer>
       </div>
     </div>

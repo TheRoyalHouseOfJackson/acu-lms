@@ -474,7 +474,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
       // Compute origin for the verification URL (fall back to Fly host in prod).
       const proto = (req.headers["x-forwarded-proto"] as string) || (req.protocol || "https");
-      const host = (req.headers["x-forwarded-host"] as string) || req.get("host") || "acu-lms.fly.dev";
+      const host = (req.headers["x-forwarded-host"] as string) || req.get("host") || "ambassadorscu.org";
       const verifyBaseUrl = `${proto}://${host}`;
 
       const data = await buildTranscript(userId, { verifyBaseUrl });

@@ -24,6 +24,15 @@ app.use(
 
 app.use(express.urlencoded({ extended: false }));
 
+// Redirect the legacy Fly hostname to the primary domain.
+app.use((req, res, next) => {
+  const host = (req.headers["x-forwarded-host"] as string) || req.get("host") || "";
+  if (host === "acu-lms.fly.dev") {
+    return res.redirect(301, `https://ambassadorscu.org${req.originalUrl}`);
+  }
+  next();
+});
+
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
     hour: "numeric",

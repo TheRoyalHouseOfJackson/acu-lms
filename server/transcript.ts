@@ -187,7 +187,7 @@ export async function buildTranscript(userId: number, opts?: { publicId?: string
   const cumulativeGpa = cumulativeAttempted > 0 ? cumulativeQP / cumulativeAttempted : 0;
 
   const publicId = opts?.publicId || cryptoRandomId();
-  const base = opts?.verifyBaseUrl || "https://acu-lms.fly.dev";
+  const base = opts?.verifyBaseUrl || process.env.PUBLIC_BASE_URL || "https://ambassadorscu.org";
 
   return {
     student: {
