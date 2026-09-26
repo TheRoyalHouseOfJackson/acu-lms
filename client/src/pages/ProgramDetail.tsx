@@ -56,13 +56,25 @@ export default function ProgramDetail() {
           <p className="mt-3 leading-relaxed text-foreground/90">{program.description}</p>
 
           <h2 className="mt-10 font-serif text-2xl text-primary">Curriculum</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {program.courses.length} course{program.courses.length !== 1 ? "s" : ""} · {program.courses.reduce((a, c) => a + c.lessons.length, 0)} lessons
+          <p className="mt-1 text-sm text-muted-foreground" data-testid="text-curriculum-summary">
+            {program.courses.length} course{program.courses.length !== 1 ? "s" : ""} ·{" "}
+            {program.courses.reduce((a, c) => a + (c.creditHours ?? 0), 0)} credit hours ·{" "}
+            {program.courses.reduce((a, c) => a + c.lessons.length, 0)} lessons
           </p>
           <div className="mt-4 space-y-6">
             {program.courses.map((c) => (
               <Card key={c.id} className="p-5" data-testid={`course-${c.id}`}>
-                <h3 className="font-serif text-xl text-foreground">{c.title}</h3>
+                <div className="flex items-start justify-between gap-4">
+                  <h3 className="font-serif text-xl text-foreground">{c.title}</h3>
+                  {c.creditHours ? (
+                    <span
+                      className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary"
+                      data-testid={`badge-credits-${c.id}`}
+                    >
+                      {c.creditHours} cr
+                    </span>
+                  ) : null}
+                </div>
                 {c.description && <p className="mt-1 text-sm text-muted-foreground">{c.description}</p>}
                 <ul className="mt-4 divide-y divide-border">
                   {c.lessons.map((l) => {

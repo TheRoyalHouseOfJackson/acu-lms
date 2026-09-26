@@ -280,6 +280,7 @@ export interface IStorage {
   createProgram(p: InsertProgram): Promise<Program>;
   updateProgram(id: number, p: Partial<InsertProgram>): Promise<Program | undefined>;
   countPrograms(): Promise<number>;
+  creditsByProgram(): Promise<Record<number, number>>;
   // courses
   listCoursesByProgram(programId: number): Promise<Course[]>;
   getCourse(id: number): Promise<Course | undefined>;
@@ -373,6 +374,15 @@ export class DatabaseStorage implements IStorage {
     return db.update(programs).set(p).where(eq(programs.id, id)).returning().get();
   }
   async countPrograms() { return db.select().from(programs).all().length; }
+  async creditsByProgram() {
+    // Single grouped query: program_id -> SUM(credit_hours)
+    const rows = sqlite
+      .prepare(`SELECT program_id, SUM(credit_hours) AS total FROM courses GROUP BY program_id`)
+      .all() as { program_id: number; total: number }[];
+    const out: Record<number, number> = {};
+    for (const r of rows) out[r.program_id] = r.total ?? 0;
+    return out;
+  }
 
   async listCoursesByProgram(programId: number) {
     return db.select().from(courses).where(eq(courses.programId, programId)).orderBy(asc(courses.position)).all();

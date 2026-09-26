@@ -1,6 +1,7 @@
 export type Program = {
   id: number; title: string; level: string; tuition: number; appFee: number;
   description: string; slug: string;
+  totalCredits?: number; // Sum of creditHours across all courses (added by /api/programs)
 };
 export type Lesson = {
   id: number; courseId: number; title: string; type: string;
@@ -9,6 +10,7 @@ export type Lesson = {
 export type Quiz = { id: number; courseId: number; title: string; passingScore: number };
 export type Course = {
   id: number; programId: number; title: string; description: string; position: number;
+  creditHours: number; courseCode?: string;
   lessons?: Lesson[]; quiz?: Quiz | null;
 };
 export type ProgramDetail = Program & {

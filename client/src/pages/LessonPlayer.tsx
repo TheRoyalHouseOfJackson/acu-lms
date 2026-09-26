@@ -105,7 +105,10 @@ export default function LessonPlayer() {
         <nav className="max-h-[40vh] overflow-y-auto px-2 pb-4 lg:max-h-[calc(100vh-160px)]">
           {program.courses.map((c) => (
             <div key={c.id} className="mb-3">
-              <p className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-accent">{c.title}</p>
+              <p className="flex items-center justify-between gap-2 px-2 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
+                <span className="truncate">{c.title}</span>
+                {c.creditHours ? <span className="shrink-0 text-[10px] font-medium normal-case tracking-normal text-accent/80">{c.creditHours} cr</span> : null}
+              </p>
               {c.lessons.map((l) => {
                 const active = l.id === lessonId;
                 const done = doneSet.has(l.id);

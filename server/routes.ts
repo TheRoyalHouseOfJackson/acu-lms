@@ -150,7 +150,10 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   // ---------- PROGRAMS ----------
   app.get("/api/programs", async (_req, res) => {
-    res.json(await storage.listPrograms());
+    const programs = await storage.listPrograms();
+    // Attach totalCredits per program (sum of course.creditHours)
+    const credits = await storage.creditsByProgram();
+    res.json(programs.map((p) => ({ ...p, totalCredits: credits[p.id] ?? 0 })));
   });
 
   app.get("/api/programs/:slug", async (req, res) => {
@@ -168,7 +171,8 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       enrolled = !!(await storage.getEnrollment(req.session.userId, program.id));
       if (enrolled) progress = await programProgress(req.session.userId, program.id);
     }
-    res.json({ ...program, courses: coursesWithLessons, enrolled, progress });
+    const totalCredits = coursesWithLessons.reduce((a, c) => a + (c.creditHours ?? 0), 0);
+    res.json({ ...program, totalCredits, courses: coursesWithLessons, enrolled, progress });
   });
 
   app.patch("/api/programs/:id", requireAdmin, async (req, res) => {

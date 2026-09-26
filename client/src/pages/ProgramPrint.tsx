@@ -60,6 +60,7 @@ export default function ProgramPrint() {
   }
 
   const totalLessons = program.courses.reduce((a, c) => a + c.lessons.length, 0);
+  const totalCredits = program.courses.reduce((a, c) => a + (c.creditHours ?? 0), 0);
   const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
   return (
@@ -134,7 +135,7 @@ export default function ProgramPrint() {
             <h1 className="mt-2 text-center font-serif text-4xl leading-tight text-primary print:mt-6 print:text-[32pt]">{program.title}</h1>
             <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-muted-foreground print:mt-6 print:text-[12pt]">{program.description}</p>
           </div>
-          <div className="relative mt-6 grid w-full grid-cols-2 gap-4 text-sm print:mt-20 sm:grid-cols-4">
+          <div className="relative mt-6 grid w-full grid-cols-2 gap-4 text-sm print:mt-20 sm:grid-cols-5">
             <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Level</p>
               <p className="mt-1 font-medium text-foreground">{program.level}</p>
@@ -142,6 +143,10 @@ export default function ProgramPrint() {
             <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Courses</p>
               <p className="mt-1 font-medium text-foreground">{program.courses.length}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground">Credits</p>
+              <p className="mt-1 font-medium text-foreground">{totalCredits}</p>
             </div>
             <div className="text-center">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Lessons</p>
@@ -176,7 +181,9 @@ export default function ProgramPrint() {
         {program.courses.map((c, ci) => (
           <section key={c.id} className="mt-12 print:mt-0 print:break-before-page">
             <div className="border-b-2 border-primary pb-3">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Course {ci + 1}</p>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                Course {ci + 1}{c.creditHours ? <span> · {c.creditHours} credit hours</span> : null}
+              </p>
               <h2 className="mt-1 font-serif text-3xl text-primary">{c.title}</h2>
               {c.description && <p className="mt-2 text-sm text-muted-foreground">{c.description}</p>}
             </div>
